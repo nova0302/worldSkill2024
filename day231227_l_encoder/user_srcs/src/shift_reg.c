@@ -32,7 +32,7 @@ void shift_reg_update(){
 void writeChar(uint16_t c){
 	uint16_t ch = c;
 	for(int i=0; i<16; i++){
-		HAL_GPIO_WritePin( GRN_DATA_GPIO_Port, GRN_DATA_Pin, ch & 0x1);
+		HAL_GPIO_WritePin( GRN_DATA_GPIO_Port, GRN_DATA_Pin, (ch & 0x1));
 		HAL_GPIO_TogglePin(GRN_SCLK_GPIO_Port, GRN_SCLK_Pin);
 		HAL_GPIO_TogglePin(GRN_SCLK_GPIO_Port, GRN_SCLK_Pin);
 		ch = ch >> 1;
@@ -44,7 +44,7 @@ void writeChar(uint16_t c){
 void writeCharR(uint16_t c){
 	uint16_t ch = c;
 	for(int i=0; i<16; i++){
-		HAL_GPIO_WritePin( RED_DATA_GPIO_Port, RED_DATA_Pin, ch & 0x1);
+		HAL_GPIO_WritePin( RED_DATA_GPIO_Port, RED_DATA_Pin, (ch & 0x1));
 		HAL_GPIO_TogglePin(RED_SCLK_GPIO_Port, RED_SCLK_Pin);
 		HAL_GPIO_TogglePin(RED_SCLK_GPIO_Port, RED_SCLK_Pin);
 		ch = ch >> 1;
