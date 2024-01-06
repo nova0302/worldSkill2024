@@ -3,6 +3,8 @@
  *
  *  Created on: Dec 27, 2023
  *      Author: sooho
+ *      허수호 010 8581 1012
+ *      서형준 010 9297 2837
  */
 #include "main.h"
 #include "shift_reg.h"
