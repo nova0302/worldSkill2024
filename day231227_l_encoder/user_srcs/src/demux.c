@@ -8,11 +8,31 @@
 #include "shift_reg.h"
 
 void driveCom(uint8_t c, uint8_t b, uint8_t a) ;
+typedef struct _DMx{
+	char ch[8];
+	uint8_t color;
+}DMx;
 
+DMx g_dmx[12];
+
+void updateDM();
+void intiDM(DMx* dm){
+}
+
+void writeDM( DMx* dmx, char pos) {
+	for(int i=0; i<8; i++){
+		g_dmx[pos % 12].ch[i] = dmx->ch[i];
+		g_dmx[pos % 12].color = dmx->color;
+	}
+	updateDM();
+}
+void updateDM(){
+
+}
 /*
-void aa(){
-	for(int i=0; i<16; i++){
-		for(int j=0; j<16; j++){
+void rotateRight(){
+	for(int i=0; i<8; i++){
+		for(int j=0; j<8; j++){
 			t[i] += g[j] >> i & 0x1;
 			t[i] = t[i] << 1;
 		}
