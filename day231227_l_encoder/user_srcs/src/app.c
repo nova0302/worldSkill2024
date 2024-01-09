@@ -9,13 +9,13 @@
 #include "shift_reg.h"
 
 void appSetup() {
-	demux_init();
-	shift_reg_init();
-	shift_reg_update();
+  demux_init();
+  shift_reg_init();
+  shift_reg_update();
 }
 
 void appLoop() {
-	demux_update();
+  demux_update();
 
 }
 
