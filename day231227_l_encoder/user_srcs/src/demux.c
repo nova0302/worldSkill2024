@@ -9,6 +9,7 @@
 #include "main.h"
 #include "shift_reg.h"
 #include "dm.h"
+#include "font.h"
 
 void driveCom(uint8_t c, uint8_t b, uint8_t a) ;
 void rowDrive();
@@ -53,60 +54,23 @@ uint16_t g_charA[3][8] = {
 void updateDM(){}
 
 void initDM(){
-
-  uint8_t t0[8] = {
-  0b00000000,
-  0b00000000,
-  0b11100000,
-  0b01000000,
-  0b01000000,
-  0b01000000,
-  0b01000000,
-  0b00000000 };
  
   //rotateDM(t0);
   for(int i=0; i<8; i++)
-    g_dm[0].ch[i] = t0[i];
-
-  uint8_t t1[8] = {
-  0b00000000,
-  0b00000000,
-  0b11100000,
-  0b01000000,
-  0b01000000,
-  0b01000000,
-  0b11100000,
-  0b00000000 };
+    g_dm[0].ch[i] = g_t[i];
 
   //rotateDM(t1);
   for(int i=0; i<8; i++)
-    g_dm[1].ch[i] = t1[i];
+    g_dm[1].ch[i] = g_i[i];
 
-  uint8_t t2[8] = {
-    0b00000000,
-    0b00000000,
-    0b10100000,
-    0b11100000,
-    0b10100000,
-    0b10100000,
-    0b10100000,
-    0b00000000 };
   //rotateDM(t2);
   for(int i=0; i<8; i++)
-    g_dm[2].ch[i] = t2[i];
+    g_dm[2].ch[i] = g_m[i];
 
-  uint8_t t3[8] = {
-    0b00000000,
-    0b00000000,
-    0b11100000,
-    0b10000000,
-    0b11100000,
-    0b10000000,
-    0b11100000,
-    0b00000000 };
   //rotateDM(t3);
   for(int i=0; i<8; i++)
-    g_dm[3].ch[i] = t3[i];
+    g_dm[3].ch[i] = g_e[i];
+
 }
 
 void rotateDM(uint8_t* ch){
