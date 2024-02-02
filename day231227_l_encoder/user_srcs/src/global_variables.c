@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "dm.h"
 
+uint32_t g_counter;
 bool g_updateDM;
 uint8_t g_col;
 DMx g_dm[12];
