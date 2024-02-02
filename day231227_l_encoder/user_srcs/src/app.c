@@ -29,11 +29,20 @@ float rtcTemp;
 extern bool g_updateDM;
 extern TIM_HandleTypeDef htim6;
 
+RotaryEncoder_t rotaryEncoder;
+
 void appSetup() {
 	HAL_TIM_Base_Start_IT(&htim6);
 	demux_init();
 	shift_reg_init();
 	shift_reg_update();
+	initRE(&rotaryEncoder
+			,{ENC_A_GPIO_Port, ENC_A_Pin}
+			,{ENC_B_GPIO_Port, ENC_B_Pin}
+	,10
+	,updateRE
+
+			);
 
 	//DS3231_Init(&hi2c1);
 	//DS3231_SetTime(&rtc);

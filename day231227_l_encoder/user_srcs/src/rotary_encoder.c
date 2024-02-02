@@ -5,8 +5,8 @@
  *      Author: SanglaeKim
  */
 #include <stdbool.h>
-#include "main.h"
 #include "dm.h"
+#include "rotary_encoder.h"
 
 extern uint32_t g_counter;
 extern DMx g_dm[12];
@@ -23,21 +23,6 @@ extern  uint8_t const g_8[8];
 extern  uint8_t const g_9[8];
 extern  uint8_t const g_nums[10][8];
 
-typedef void (*RotaryEncoderCallback)(void);
-
-typedef struct myGpio{
-	GPIO_TypeDef* port;
-	uint16_t pin;
-}MyGpio_t;
-
-typedef struct rotaryEncoder{
-	MyGpio_t* pA;
-	MyGpio_t* pB;
-	uint32_t lastTime;
-	uint32_t Delay;
-	bool a_last;
-	RotaryEncoderCallback cb;
-}RotaryEncoder_t;
 
 bool readGpioPin(MyGpio_t* pGpio){
 		bool a_now = HAL_GPIO_ReadPin(pGpio->port, pGpio->pin);
