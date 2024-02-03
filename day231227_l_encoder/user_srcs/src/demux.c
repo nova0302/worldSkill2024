@@ -47,23 +47,21 @@ uint16_t g_charA[3][8] =
 void updateDM () { }
 
 void initDM () {
+	for (int i = 0; i < 8; i++){
+		g_dm[0].ch[i] = g_t[i];
+		g_dm[1].ch[i] = g_i[i];
+		g_dm[2].ch[i] = g_m[i];
+		g_dm[3].ch[i] = g_e[i];
 
-  //rotateDM(t0);
-  for (int i = 0; i < 8; i++)
-    g_dm[0].ch[i] = g_t[i];
-
-  //rotateDM(t1);
-  for (int i = 0; i < 8; i++)
-    g_dm[1].ch[i] = g_i[i];
-
-  //rotateDM(t2);
-  for (int i = 0; i < 8; i++)
-    g_dm[2].ch[i] = g_m[i];
-
-  //rotateDM(t3);
-  for (int i = 0; i < 8; i++)
-    g_dm[3].ch[i] = g_e[i];
-
+		g_dm[4].ch[i] = g_0[i];
+		g_dm[5].ch[i] = g_1[i];
+		g_dm[6].ch[i] = g_2[i];
+		g_dm[7].ch[i] = g_3[i];
+		g_dm[8].ch[i] = g_4[i];
+		g_dm[9].ch[i] = g_5[i];
+		g_dm[10].ch[i] = g_6[i];
+		g_dm[11].ch[i] = g_7[i];
+	}
 }
 
 void rotateDM (uint8_t *ch) {
@@ -81,16 +79,37 @@ void rotateDM (uint8_t *ch) {
 }
 
 void composeDM () {
-  uint8_t dm0[8], dm1[8];
-  for (int i = 0; i < 8; ++i) {
-    dm0[i] = g_dm[0].ch[i] + (g_dm[1].ch[i] >> 4);
-    dm1[i] = g_dm[2].ch[i] + (g_dm[3].ch[i] >> 4);
-  }
-  rotateDM (dm0);
-  rotateDM (dm1);
+	uint8_t dm0[8], dm1[8];
+	for (int i = 0; i < 8; ++i) {
+		dm0[i] = g_dm[0].ch[i] + (g_dm[1].ch[i] >> 4);
+		dm1[i] = g_dm[2].ch[i] + (g_dm[3].ch[i] >> 4);
+	}
+	rotateDM(dm0);
+	rotateDM(dm1);
 
-  for (int i = 0; i < 8; ++i)
-    g_charA[1][i] = ((uint16_t) dm0[i] << 8) + (uint16_t) dm1[i];
+	for (int i = 0; i < 8; ++i)
+		g_charA[0][i] = ((uint16_t) dm0[i] << 8) + (uint16_t) dm1[i];
+//////////////////////////////////////////////////////////////////////////////////////
+	for (int i = 0; i < 8; ++i) {
+		dm0[i] = g_dm[4].ch[i] + (g_dm[5].ch[i] >> 4);
+		dm1[i] = g_dm[6].ch[i] + (g_dm[7].ch[i] >> 4);
+	}
+	rotateDM(dm0);
+	rotateDM(dm1);
+
+	for (int i = 0; i < 8; ++i)
+		g_charA[1][i] = ((uint16_t) dm0[i] << 8) + (uint16_t) dm1[i];
+
+//////////////////////////////////////////////////////////////////////////////////////
+	for (int i = 0; i < 8; ++i) {
+		dm0[i] = g_dm[8].ch[i] + (g_dm[9].ch[i] >> 4);
+		dm1[i] = g_dm[10].ch[i] + (g_dm[11].ch[i] >> 4);
+	}
+	rotateDM(dm0);
+	rotateDM(dm1);
+
+	for (int i = 0; i < 8; ++i)
+		g_charA[2][i] = ((uint16_t) dm0[i] << 8) + (uint16_t) dm1[i];
 }
 
 void demux_init () {

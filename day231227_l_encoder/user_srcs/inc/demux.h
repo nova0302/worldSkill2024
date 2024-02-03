@@ -10,6 +10,6 @@
 
 void demux_init();
 void demux_update();
-
+void composeDM(); // <<  추가
 
 #endif /* INC_DEMUX_H_ */

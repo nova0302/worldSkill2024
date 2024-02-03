@@ -4,6 +4,8 @@
 #include "dm.h"
 
 bool g_updateDM;
+bool g_bBtnEvent; // <<---이거 추가
+
 uint8_t g_col;
 DMx g_dm[12];
 uint16_t g_charA[3][8] =
