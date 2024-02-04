@@ -32,6 +32,7 @@ void shift_reg_update() {
 void writeChar(uint16_t c) {
   for (int j = 0; j < 2; j++) {
     uint8_t ch = (c >> 8 * j) & 0xFF;
+  // Hmmmm! MSB first?
     for (int i = 0; i < 8; i++) {
       HAL_GPIO_WritePin( GRN_DATA_GPIO_Port, GRN_DATA_Pin, (ch & 0x80));
       HAL_GPIO_TogglePin(GRN_SCLK_GPIO_Port, GRN_SCLK_Pin);
@@ -39,6 +40,7 @@ void writeChar(uint16_t c) {
       ch = ch << 1;
     }
   }
+  // Hmmmm! Why toggle one more?
   HAL_GPIO_TogglePin(GRN_LCLK_GPIO_Port, GRN_LCLK_Pin);
   HAL_GPIO_TogglePin(GRN_LCLK_GPIO_Port, GRN_LCLK_Pin);
 }
