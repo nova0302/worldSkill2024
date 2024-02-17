@@ -10,14 +10,14 @@ uint32_t sw_tick = 0, idle_tick = 0;
 uint8_t sw_flag = 0, sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
-void sw1CbShort();
-void sw1CbLong();
+void btn1CbShort();
+void btn1CbLong();
 
-void sw2CbShort();
-void sw2CbLong();
+void btn2CbShort();
+void btn2CbLong();
 
-void sw3CbShort();
-void sw3CbLong();
+void btn3CbShort();
+void btn3CbLong();
 
 void Volume_Up() {
 	if (Volume < 30)
@@ -59,12 +59,12 @@ void loop(void) {
 	OLED_Init();
 	OLED_Show_Str(0,0, "begin!!", Font8x13, 0);
 	OLED_Display();
-	btnProcess_t sw1, sw2, sw3;
-	initBtn(&sw1, SW1_GPIO_Port, SW1_Pin, sw1CbShort, sw1CbLong);
-	initBtn(&sw2, SW2_GPIO_Port, SW2_Pin, sw2CbShort, sw2CbLong);
-	initBtn(&sw3, SW3_GPIO_Port, SW3_Pin, sw3CbShort, sw3CbLong);
+	btnProcess_t btn1, btn2, btn3;
+	initBtn(&btn1, SW1_GPIO_Port, SW1_Pin, btn1CbShort, btn1CbLong);
+	initBtn(&btn2, SW2_GPIO_Port, SW2_Pin, btn2CbShort, btn2CbLong);
+	initBtn(&btn3, SW3_GPIO_Port, SW3_Pin, btn3CbShort, btn3CbLong);
 	while (1) {
-		updateRE(&sw1); updateRE(&sw2); updateRE(&sw3);
+		updateRE(&btn1); updateRE(&btn2); updateRE(&btn3);
 	}
 }
 
@@ -107,29 +107,37 @@ void updateRE(btnProcess_t *btn) {
 	}
 }
 
-void sw1CbShort(){
-	OLED_Show_Str(0,0, "sw1 short ", Font8x13, 0);
+void btn1CbShort(){
+	DHT11_Type dht11;
+	DHT11_Read_Data(&dht11);
+	char msgBuff[32]={0,};
+
+	sprintf(msgBuff, "%d.%dC", dht11.Temp_Int, dht11.Temp_Float);
+
+	OLED_Show_Str(0,0, msgBuff, Font8x13, 0);
 	OLED_Display();
 }
-void sw1CbLong(){
-	OLED_Show_Str(0,0, "sw1 long ", Font8x13, 0);
+void btn1CbLong(){
+	OLED_Show_Str(0,0, "btn1 long ", Font8x13, 0);
 	OLED_Display();
 }
 
-void sw2CbShort(){
-	OLED_Show_Str(1,0, "sw2 short ", Font8x13, 0);
+void btn2CbShort(){
+	BUZZ_ON;
+	OLED_Show_Str(1,0, "btn2 short ", Font8x13, 0);
 	OLED_Display();
 }
-void sw2CbLong(){
-	OLED_Show_Str(1,0, "sw2 long ", Font8x13, 0);
+void btn2CbLong(){
+	BUZZ_OFF;
+	OLED_Show_Str(1,0, "btn2 long ", Font8x13, 0);
 	OLED_Display();
 }
 
-void sw3CbShort(){
-	OLED_Show_Str(2,0, "sw3 short ", Font8x13, 0);
+void btn3CbShort(){
+	OLED_Show_Str(2,0, "btn3 short ", Font8x13, 0);
 	OLED_Display();
 }
-void sw3CbLong(){
-	OLED_Show_Str(2,0, "sw3 long ", Font8x13, 0);
+void btn3CbLong(){
+	OLED_Show_Str(2,0, "btn3 long ", Font8x13, 0);
 	OLED_Display();
 }
