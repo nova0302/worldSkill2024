@@ -10,6 +10,9 @@ uint32_t sw_tick = 0, idle_tick = 0;
 uint8_t sw_flag = 0, sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
+void doWorkForShortPress();
+void doWorkForLongPress();
+
 void Volume_Up() {
 	if (Volume < 30)
 		Volume += 1;
@@ -43,6 +46,9 @@ void updateRE(btnProcess_t *btn) ;
 void initBtn(btnProcess_t *btn, GPIO_TypeDef *port, uint16_t pin);
 
 void loop(void) {
+	OLED_Init();
+	OLED_Show_Str(0,0, "begin!!", Font8x13, 0);
+	OLED_Display();
 	btnProcess_t sw1, sw2, sw3;
 	initBtn(&sw1, SW1_GPIO_Port, SW1_Pin);
 	initBtn(&sw2, SW2_GPIO_Port, SW2_Pin);
@@ -51,10 +57,6 @@ void loop(void) {
 		updateRE(&sw1); updateRE(&sw2); updateRE(&sw3);
 	}
 }
-
-void doWorkForShortPress(){ }
-
-void doWorkForLongPress(){ }
 
 void initBtn(btnProcess_t *btn, GPIO_TypeDef *port, uint16_t pin){
 	btn->port = port;
@@ -91,4 +93,13 @@ void updateRE(btnProcess_t *btn) {
 		btn->btnState = ST_IDLE;
 		break;
 	}
+}
+
+void doWorkForShortPress(){
+	OLED_Show_Str(0,0, "short", Font8x13, 0);
+	OLED_Display();
+}
+void doWorkForLongPress(){
+	OLED_Show_Str(0,0, "long", Font8x13, 0);
+	OLED_Display();
 }
