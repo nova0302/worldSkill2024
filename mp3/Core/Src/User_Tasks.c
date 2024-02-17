@@ -40,9 +40,13 @@ typedef struct btnProcess{
 }btnProcess_t;
 
 void updateRE(btnProcess_t *btn) ;
+void initBtn(btnProcess_t *btn, GPIO_TypeDef *port, uint16_t pin);
 
 void loop(void) {
 	btnProcess_t sw1, sw2, sw3;
+	initBtn(&sw1, SW1_GPIO_Port, SW1_Pin);
+	initBtn(&sw2, SW2_GPIO_Port, SW2_Pin);
+	initBtn(&sw3, SW3_GPIO_Port, SW3_Pin);
 	while (1) {
 		updateRE(&sw1); updateRE(&sw2); updateRE(&sw3);
 	}
@@ -51,6 +55,13 @@ void loop(void) {
 void doWorkForShortPress(){ }
 
 void doWorkForLongPress(){ }
+
+void initBtn(btnProcess_t *btn, GPIO_TypeDef *port, uint16_t pin){
+	btn->port = port;
+	btn->pin = pin;
+	btn->btnState = ST_IDLE;
+	btn->last = 0;
+}
 
 void updateRE(btnProcess_t *btn) {
 	uint32_t now = HAL_GetTick();
