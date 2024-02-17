@@ -117,7 +117,7 @@ void rowDrive() {
 		case 0:
 			g_col++; g_col %= 3;
 			colDrive(g_col);
-			    driveCom(0, 0, 0); writeChar(g_charA[g_col][0]); break;
+			driveCom(0, 0, 0); writeChar(g_charA[g_col][0]); break;
 		case 1: driveCom(0, 0, 1); writeChar(g_charA[g_col][1]); break;
 		case 2: driveCom(0, 1, 0); writeChar(g_charA[g_col][2]); break;
 		case 3: driveCom(0, 1, 1); writeChar(g_charA[g_col][3]); break;
