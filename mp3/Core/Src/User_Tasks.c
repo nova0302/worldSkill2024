@@ -9,6 +9,8 @@ uint32_t sw_tick = 0, idle_tick = 0;
 uint8_t sw_flag = 0, sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
+uint16_t g_trackNo;
+
 void btn1CbShort();
 void btn1CbLong();
 
@@ -17,6 +19,9 @@ void btn2CbLong();
 
 void btn3CbShort();
 void btn3CbLong();
+
+void btn4CbShort();
+void btn4CbLong();
 
 void Volume_Up() {
 	if (Volume < 30)
@@ -52,8 +57,8 @@ typedef struct btnProcess {
 	GPIO_TypeDef *port;
 	uint16_t pin;
 	StBtnState_t btnState;
-	uint32_t last;
-	bool b_a_last;
+	uint32_t last; // time이전값
+	bool b_a_last; // btn이전값
 	callBack cbShort;
 	callBack cbLong;
 } btnProcess_t;
@@ -61,7 +66,7 @@ typedef struct btnProcess {
 void updateRE(btnProcess_t *btn);
 void initBtn(btnProcess_t *btn, GPIO_TypeDef *port, uint16_t pin,
 		callBack cbShort, callBack cbLong);
-void initApp(){
+void initApp() {
 	PAJ7620_Init();
 	OLED_Init();
 	//OLED_Show_Str(0, 0, "begin!!", Font8x13, 0);
@@ -71,15 +76,19 @@ void initApp(){
 }
 
 void loop(void) {
+
 	initApp();
-	btnProcess_t btn1, btn2, btn3;
-	initBtn(&btn1, SW1_GPIO_Port, SW1_Pin, btn1CbShort, btn1CbLong);
-	initBtn(&btn2, SW2_GPIO_Port, SW2_Pin, btn2CbShort, btn2CbLong);
-	initBtn(&btn3, SW3_GPIO_Port, SW3_Pin, btn3CbShort, btn3CbLong);
+
+	btnProcess_t btn[4];
+
+	initBtn(&btn[0], SW1_GPIO_Port, SW1_Pin, btn1CbShort, btn1CbLong);
+	initBtn(&btn[1], SW2_GPIO_Port, SW2_Pin, btn2CbShort, btn2CbLong);
+	initBtn(&btn[2], SW3_GPIO_Port, SW3_Pin, btn3CbShort, btn3CbLong);
+	initBtn(&btn[3], SW4_GPIO_Port, SW4_Pin, btn4CbShort, btn4CbLong);
+
 	while (1) {
-		updateRE(&btn1);
-		updateRE(&btn2);
-		updateRE(&btn3);
+		for (int i = 0; i < 3; ++i)
+			updateRE(&btn[i]);
 	}
 }
 
@@ -94,8 +103,11 @@ void initBtn(btnProcess_t *btn, GPIO_TypeDef *port, uint16_t pin,
 }
 
 void updateRE(btnProcess_t *btn) {
+
 	uint32_t now = HAL_GetTick();
+
 	switch (btn->btnState) {
+
 	case ST_IDLE: // falling edge check
 		if (now - btn->last > 10) {
 			btn->last = now;
@@ -133,36 +145,28 @@ void updateRE(btnProcess_t *btn) {
 }
 
 void btn1CbShort() {
-	DHT11_Type dht11;
-	DHT11_Read_Data(&dht11);
-	char msgBuff[32] = { 0, };
-
-	sprintf(msgBuff, "%d.%dC", dht11.Temp_Int, dht11.Temp_Float);
-
-	OLED_Show_Str(0, 0, msgBuff, Font8x13, 0);
-	OLED_Display();
+	DFPlayNextTrack(); // 다음 곡을 재행하는 코드 구현
 }
 void btn1CbLong() {
-	OLED_Show_Str(0, 0, "btn1 long ", Font8x13, 0);
-	OLED_Display();
+	DFPlayThisTrack(g_trackNo); // 현재 곡을 재행하는 코드 구현
 }
-
 void btn2CbShort() {
-	BUZZ_ON;
-	OLED_Show_Str(1, 0, "btn2 short ", Font8x13, 0);
-	OLED_Display();
+	DFPlayPreviousTrack(); // 다음 이전곡을 재행하는 코드 구현
 }
 void btn2CbLong() {
-	BUZZ_OFF;
-	OLED_Show_Str(1, 0, "btn2 long ", Font8x13, 0);
-	OLED_Display();
+	DFPause(); // 일시중지하는 코드 구현
 }
 
 void btn3CbShort() {
-	OLED_Show_Str(2, 0, "btn3 short ", Font8x13, 0);
-	OLED_Display();
+	Volume_Up(); // 볼륨증가 코드
 }
 void btn3CbLong() {
-	OLED_Show_Str(2, 0, "btn3 long ", Font8x13, 0);
-	OLED_Display();
+	// 절전기능 실행 코드 구현
+}
+
+void btn4CbShort() {
+	Volume_Down(); // 볼륨감소 코드
+}
+void btn4CbLong() {
+	//  설정화면으로 전환
 }
