@@ -20,12 +20,12 @@ void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
 
 #define numBtn (4)
 
-
 typedef enum SystemState { ST_SYS_INIT
 	,ST_SYS_MAIN
 	,ST_SYS_MANAGEMENT
 	,ST_SYS_POW_SAVE
 	,ST_SYS_INIT3 } SystemState_t;
+
 typedef enum btnState { ST_IDLE, ST_DOWN, ST_SHORT_PRESSED, ST_LONG_PRESSED } StBtnState_t;
 
 
@@ -43,5 +43,9 @@ typedef struct btnProcess {
 
 void updateBtn(btnProcess_t *pBtn);
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong);
+void updatMainMenu();
+void updatManagementMenu();
+void start_P() ;
+
 
 #endif
