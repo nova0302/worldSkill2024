@@ -41,8 +41,7 @@ void initApp() {
 	// EepromLoad();
 
 	OLED_Show_Str(0, 0, "begin!!", Font8x13, 0);
-	// 128 * 64
-	OLED_Show_Picture(10, 32, 102, 5, Bar_Icon);
+	OLED_Show_Picture(10, 32, 102, 5, Bar_Icon); // 128 * 64
 	OLED_Display();
 }
 void loop(void) {
@@ -108,29 +107,46 @@ void updateBtn(btnProcess_t *pBtn) {
 }
 
 void btn1CbShort() {
-	if (g_SystemState == ST_SYS_MAIN) {
+
+	OLED_Show_Str(0, 0, "btn1 short pressed!!", Font8x13, 0);
+	OLED_Display();
+
+	//if (g_SystemState == ST_SYS_MAIN) {
 		DFPlayNextTrack(); // 다음 곡을 재행하는 코드 구현
-	}
+	//}
 }
 void btn1CbLong() {
+	OLED_Show_Str(0, 0, "btn1 long pressed!!", Font8x13, 0);
+	OLED_Display();
 	DFPlayThisTrack(g_trackNo); // 현재 곡을 재행하는 코드 구현
 }
 void btn2CbShort() {
+	OLED_Show_Str(0, 0, "btn2 short pressed!!", Font8x13, 0);
+	OLED_Display();
 	DFPlayPreviousTrack(); // 다음 이전곡을 재행하는 코드 구현
 }
 void btn2CbLong() {
+	OLED_Show_Str(0, 0, "btn2 long pressed!!", Font8x13, 0);
+	OLED_Display();
 	DFPause(); // 일시중지하는 코드 구현
 }
 void btn3CbShort() {
+	OLED_Show_Str(0, 0, "btn3 short pressed!!", Font8x13, 0);
+	OLED_Display();
 	Volume_Up(); // 볼륨증가 코드
 }
 void btn3CbLong() {
+	OLED_Show_Str(0, 0, "btn3 long pressed!!", Font8x13, 0);
+	OLED_Display();
 	// 절전기능 실행 코드 구현
 }
 void btn4CbShort() {
+	OLED_Show_Str(0, 0, "btn4 short pressed!!", Font8x13, 0);
+	OLED_Display();
 	Volume_Down(); // 볼륨감소 코드
 }
 void btn4CbLong() {
-	//  설정 화면으로 전환
-	g_SystemState = ST_SYS_MANAGEMENT;
+	OLED_Show_Str(0, 0, "btn4 long pressed!!", Font8x13, 0);
+	OLED_Display();
+	g_SystemState = ST_SYS_MANAGEMENT; //  설정 화면으로 전환
 }
