@@ -9,8 +9,10 @@ uint32_t sw_tick = 0, idle_tick = 0;
 uint8_t sw_flag = 0, sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
+bool     g_bUpdateScreen = false;
+uint8_t  g_CurLoc = 0; // 첫번제 칸
 uint16_t g_trackNo;
-uint8_t g_numTotalTrack;
+uint8_t  g_numTotalTrack;
 SystemState_t g_SystemState;
 
 void Volume_Up() {
@@ -60,6 +62,10 @@ void loop(void) {
 	while (1) {
 		for (int i = 0; i < numBtn; ++i)
 			updateBtn(&btn[i]);
+		if (g_bUpdateScreen) {
+			//
+			g_bUpdateScreen = false;
+		}
 	}
 }
 
@@ -108,12 +114,15 @@ void updateBtn(btnProcess_t *pBtn) {
 	}
 }
 
+
 void btn1CbShort() {
 	printDbgMessage(1, true);
 	switch (g_SystemState) {
-		case ST_SYS_MAIN:
-		DFPlayNextTrack(); break; // 다음 곡을 재행하는 코드 구현
-		case ST_SYS_MANAGEMENT: break; //
+		case ST_SYS_MAIN: DFPlayNextTrack(); break; // 다음 곡을 재행하는 코드 구현
+		case ST_SYS_MANAGEMENT:
+			if (--g_CurLoc < 0) g_CurLoc = 3;
+			g_bUpdateScreen = true;
+			break; //
 		default: break;
 	}
 }
@@ -129,7 +138,10 @@ void btn2CbShort() {
 	printDbgMessage(2, true);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: DFPlayPreviousTrack(); break; // 이전곡 재행
-		case ST_SYS_MANAGEMENT: break; //
+		case ST_SYS_MANAGEMENT:
+			if (++g_CurLoc > 3) g_CurLoc = 0;
+			g_bUpdateScreen = true;
+			break; //
 		default: break;
 	}
 }
@@ -137,7 +149,9 @@ void btn2CbLong() {
 	printDbgMessage(2, false);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: DFPause(); break; // 일시중지하는 코드 구현
-		case ST_SYS_MANAGEMENT: break; //
+		case ST_SYS_MANAGEMENT:
+
+			break; //
 		default: break;
 	}
 }
