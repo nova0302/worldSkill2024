@@ -56,6 +56,7 @@ void loop(void) {
 
 
 	  OLED_Clear();
+	  OLED_Show_Picture(0, 0, 16, 16, Dir_Icon);
 	  OLED_Show_Picture(100, 0, 16, 16, Alarm_Icon);
 	  OLED_Show_Picture(120, 0, 8, 16, Battry_Icon);
 
