@@ -28,6 +28,27 @@ typedef enum SystemState { ST_SYS_INIT
 
 typedef enum btnState { ST_IDLE, ST_DOWN, ST_SHORT_PRESSED, ST_LONG_PRESSED } StBtnState_t;
 
+typedef enum eBtnEvent {
+	 EVT_BTN1_SHORT_PRESS
+	,EVT_BTN1_LONG_PRESS
+
+	,EVT_BTN2_SHORT_PRESS
+	,EVT_BTN2_LONG_PRESS
+
+	,EVT_BTN3_SHORT_PRESS
+	,EVT_BTN3_LONG_PRESS
+
+	,EVT_BTN4_SHORT_PRESS
+	,EVT_BTN4_LONG_PRESS
+} eBtnEvent_t;
+
+typedef struct{
+	uint8_t head;
+	uint8_t tail;
+	eBtnEvent_t eBtnEventBuf[256];
+}StEventFifo_t;
+
+
 
 typedef void (*callBack)();
 
@@ -45,6 +66,7 @@ void updateBtn(btnProcess_t *pBtn);
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong);
 void updatMainMenu();
 void updatManagementMenu();
+void updatePowerSave();
 void start_P() ;
 
 
