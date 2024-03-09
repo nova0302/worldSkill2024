@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "User_Tasks.h"
 
 char str_buf[20];
@@ -108,16 +109,16 @@ void updateBtn(btnProcess_t *pBtn) {
 }
 
 void btn1CbShort() {
-
-	OLED_Show_Str(0, 0, "btn1 short pressed!!", Font8x13, 0);
-	OLED_Display();
-
-	if (g_SystemState == ST_SYS_MAIN) DFPlayNextTrack(); // 다음 곡을 재행하는 코드 구현
+	printDbgMessage(1, true);
+	switch (g_SystemState) {
+		case ST_SYS_MAIN:
+		DFPlayNextTrack(); break; // 다음 곡을 재행하는 코드 구현
+		case ST_SYS_MANAGEMENT: break; //
+		default: break;
+	}
 }
 void btn1CbLong() {
-	OLED_Show_Str(0, 0, "btn1 long pressed!!", Font8x13, 0);
-	OLED_Display();
-
+	printDbgMessage(1, false);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: DFPlayThisTrack(g_trackNo); break; // 현재곡 재행
 		case ST_SYS_MANAGEMENT: break; //
@@ -125,8 +126,7 @@ void btn1CbLong() {
 	}
 }
 void btn2CbShort() {
-	OLED_Show_Str(0, 0, "btn2 short pressed!!", Font8x13, 0);
-	OLED_Display();
+	printDbgMessage(2, true);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: DFPlayPreviousTrack(); break; // 이전곡 재행
 		case ST_SYS_MANAGEMENT: break; //
@@ -134,9 +134,7 @@ void btn2CbShort() {
 	}
 }
 void btn2CbLong() {
-	OLED_Show_Str(0, 0, "btn2 long pressed!!", Font8x13, 0);
-	OLED_Display();
-	if (g_SystemState == ST_SYS_MAIN)
+	printDbgMessage(2, false);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: DFPause(); break; // 일시중지하는 코드 구현
 		case ST_SYS_MANAGEMENT: break; //
@@ -144,9 +142,7 @@ void btn2CbLong() {
 	}
 }
 void btn3CbShort() {
-	OLED_Show_Str(0, 0, "btn3 short pressed!!", Font8x13, 0);
-	OLED_Display();
-	if (g_SystemState == ST_SYS_MAIN)
+	printDbgMessage(3, true);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: Volume_Up(); break; // 볼륨증가 코드
 		case ST_SYS_MANAGEMENT: break; // 현재 곡을 재행하는 코드 구현
@@ -154,31 +150,34 @@ void btn3CbShort() {
 	}
 }
 void btn3CbLong() {
-	OLED_Show_Str(0, 0, "btn3 long pressed!!", Font8x13, 0);
-	OLED_Display();
-	// 절전기능 실행 코드 구현
-	switch (g_SystemState) {
+	printDbgMessage(3, false);
+	switch (g_SystemState) { // 절전기능 실행 코드 구현
 		case ST_SYS_MAIN: g_SystemState = ST_SYS_POW_SAVE; break; //  설정 화면으로 전환
 		case ST_SYS_MANAGEMENT: break; //
 		default: break;
 	}
 }
 void btn4CbShort() {
-	OLED_Show_Str(0, 0, "btn4 short pressed!!", Font8x13, 0);
-	OLED_Display();
-	if (g_SystemState == ST_SYS_MAIN)
+	printDbgMessage(4, true);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: Volume_Down(); break; // 볼륨감소 코드
 		case ST_SYS_MANAGEMENT: break; //
 		default: break;
 	}
 }
+
 void btn4CbLong() {
-	OLED_Show_Str(0, 0, "btn4 long pressed!!", Font8x13, 0);
-	OLED_Display();
+	printDbgMessage(4, false);
 	switch (g_SystemState) {
 		case ST_SYS_MAIN: g_SystemState = ST_SYS_MANAGEMENT; break; //  설정 화면으로 전환
 		case ST_SYS_MANAGEMENT: break; //
 		default: break;
 	}
+}
+
+void printDbgMessage(uint8_t btnNumber, bool bIsShortPress){
+	char msgBuf[64];
+	sprintf(msgBuf, "btn%d %s pressed!!", btnNumber, bIsShortPress ? "short" : "long");
+	OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
+	OLED_Display();
 }

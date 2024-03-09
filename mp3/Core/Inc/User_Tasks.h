@@ -16,8 +16,10 @@ void btn3CbShort();
 void btn3CbLong();
 void btn4CbShort();
 void btn4CbLong();
+void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
 
 #define numBtn (4)
+
 
 typedef enum SystemState { ST_SYS_INIT
 	,ST_SYS_MAIN
