@@ -40,6 +40,7 @@ typedef enum eBtnEvent {
 
 	,EVT_BTN4_SHORT_PRESS
 	,EVT_BTN4_LONG_PRESS
+	,EVT_IS_ENTRY
 } eBtnEvent_t;
 
 typedef struct{
@@ -47,8 +48,6 @@ typedef struct{
 	uint8_t tail;
 	eBtnEvent_t eBtnEventBuf[256];
 }StEventFifo_t;
-
-
 
 typedef void (*callBack)();
 
@@ -64,10 +63,11 @@ typedef struct btnProcess {
 
 void updateBtn(btnProcess_t *pBtn);
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong);
-void updatMainMenu();
-void updatManagementMenu();
+void updateMainMenu();
+void updateManagementMenu();
 void updatePowerSave();
 void start_P() ;
+void showManagementEntryScreen(uint8_t curPos);
 
 
 #endif

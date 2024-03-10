@@ -5,24 +5,20 @@ uint32_t Tr_all = 0;
 uint32_t Tr_now = 0;
 
 char str_buf[20];
-uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0,
-		Sleep_Sec = 0;
-
 uint32_t sw_tick = 0, idle_tick = 0;
-uint8_t sw_flag = 0, sw_buf = 0, sw_it = 0;
+uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0, Sleep_Sec = 0;
+uint8_t sw_flag = 0,  sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
-bool g_bUpdateScreen = false;
-uint8_t g_CurLoc = 0; // 첫번제 칸
+bool     g_bUpdateScreen = false;
+uint8_t  g_CurLoc = 0; // 첫번제 칸
 uint16_t g_trackNo;
-uint32_t g_numTotalTrack;
+uint16_t g_numTotalTrack;
 SystemState_t g_SystemState;
 
 StEventFifo_t g_StEventFifo;
 
-void initQueue(StEventFifo_t *pFifo){
-	pFifo->head = pFifo->tail = 0;
-}
+void initQueue(StEventFifo_t *pFifo){ pFifo->head = pFifo->tail = 0; }
 
 void enqueue(StEventFifo_t *pFifo, eBtnEvent_t btnEvent) {
 	pFifo->eBtnEventBuf[pFifo->head++] = btnEvent;
@@ -83,7 +79,6 @@ void loop(void) {
 	sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, g_numTotalTrack);
 	OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
 	OLED_Display();
-
 	// 윤년 && eeprom?
 
 	while (1) {
@@ -91,15 +86,58 @@ void loop(void) {
 		for(int i = 0; i < numBtn; ++i) updateBtn(&btn[i]);
 
 		switch (g_SystemState) {
-		case ST_SYS_MAIN: updatMainMenu(); break;
-		case ST_SYS_MANAGEMENT: updatManagementMenu(); break;
-		case ST_SYS_POW_SAVE: updatePowerSave(); break;
+		case ST_SYS_MAIN:       updateMainMenu();       break;
+		case ST_SYS_MANAGEMENT: updateManagementMenu(); break;
+		case ST_SYS_POW_SAVE:   updatePowerSave();      break;
 		default: break;
 		}
 	}
 }
 
-void updatManagementMenu() {
+void updateMainMenu() {
+	eBtnEvent_t BtnEvent;
+	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
+	switch (BtnEvent) {
+		case EVT_BTN1_SHORT_PRESS: DFPlayNextTrack();          break;
+		case EVT_BTN1_LONG_PRESS : DFPlayThisTrack(g_trackNo); break;
+		case EVT_BTN2_SHORT_PRESS: DFPlayPreviousTrack();      break;
+		case EVT_BTN2_LONG_PRESS : DFPause();                  break;
+		case EVT_BTN3_SHORT_PRESS: Volume_Up();                break;
+		case EVT_BTN3_LONG_PRESS : g_SystemState = ST_SYS_POW_SAVE; break;
+		case EVT_BTN4_SHORT_PRESS: Volume_Down();              break;
+		case EVT_BTN4_LONG_PRESS :
+			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
+			g_SystemState = ST_SYS_MANAGEMENT; break;
+		default: break;
+	}
+}
+
+void updateManagementMenu() {
+	static uint8_t curPos = 0;
+	eBtnEvent_t BtnEvent;
+	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
+	switch (BtnEvent) {
+		case EVT_IS_ENTRY:
+			curPos = 0;
+			OLED_Buffer_Clear();
+			showManagementEntryScreen(curPos);
+			break;
+		case EVT_BTN1_SHORT_PRESS:
+			if (--curPos < 0) curPos = 2;
+			showManagementEntryScreen(curPos);
+			break;
+		case EVT_BTN2_SHORT_PRESS:
+			if (++curPos > 2) curPos = 0;
+			showManagementEntryScreen(curPos);
+			break;
+		case EVT_BTN3_SHORT_PRESS: break;
+		case EVT_BTN4_SHORT_PRESS: break;
+		default: break;
+	}
+}
+//https://meet.google.com/rjn-snwi-ptz
+
+void updatePowerSave(){
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
@@ -109,25 +147,6 @@ void updatManagementMenu() {
 		case EVT_BTN4_SHORT_PRESS: break;
 		default: break;
 	}
-}
-
-void updatMainMenu() {
-	eBtnEvent_t BtnEvent;
-	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-	switch (BtnEvent) {
-		case EVT_BTN1_SHORT_PRESS: DFPlayNextTrack();         break;
-		case EVT_BTN1_LONG_PRESS:  DFPlayThisTrack(g_trackNo); break;
-		case EVT_BTN2_SHORT_PRESS: DFPlayPreviousTrack();     break;
-		case EVT_BTN2_LONG_PRESS:  DFPause();                  break;
-		case EVT_BTN3_SHORT_PRESS: Volume_Up();               break;
-		case EVT_BTN3_LONG_PRESS:  g_SystemState = ST_SYS_POW_SAVE; break;
-		case EVT_BTN4_SHORT_PRESS: Volume_Down();             break;
-		case EVT_BTN4_LONG_PRESS:  g_SystemState = ST_SYS_MANAGEMENT; break;
-		default: break;
-	}
-}
-void updatePowerSave(){
-
 }
 
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong) {
@@ -155,15 +174,8 @@ void updateBtn(btnProcess_t *pBtn) {
 		}
 		break;
 	case ST_DOWN:
-
 		bool btnNow = HAL_GPIO_ReadPin(pBtn->port, pBtn->pin);
-
-		uint32_t delayAmount = 2000;
-		if (g_SystemState == ST_SYS_INIT)
-			delayAmount = 2000;
-		else if (g_SystemState == ST_SYS_MAIN)
-			delayAmount = 5000;
-
+		uint32_t delayAmount = 3000;
 		if (btnNow)
 			pBtn->btnState = ST_SHORT_PRESSED;
 		else if (now - pBtn->last > delayAmount)
@@ -180,61 +192,30 @@ void updateBtn(btnProcess_t *pBtn) {
 	}
 }
 
-void btn1CbShort() {
-#ifdef DEBUG_
-	printDbgMessage(1, true);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN1_SHORT_PRESS);
-}
-void btn1CbLong() {
-#ifdef DEBUG_
-	printDbgMessage(1, false);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN1_LONG_PRESS);
-}
-void btn2CbShort() {
-#ifdef DEBUG_
-	printDbgMessage(2, true);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN2_SHORT_PRESS);
-}
-void btn2CbLong() {
-#ifdef DEBUG_
-	printDbgMessage(2, false);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN2_LONG_PRESS);
-}
-void btn3CbShort() {
-#ifdef DEBUG_
-	printDbgMessage(3, true);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN3_SHORT_PRESS);
-}
-void btn3CbLong() {
-#ifdef DEBUG_
-	printDbgMessage(3, false);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN3_LONG_PRESS);
-}
-void btn4CbShort() {
-#ifdef DEBUG_
-	printDbgMessage(4, true);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN4_SHORT_PRESS);
-}
-
-void btn4CbLong() {
-#ifdef DEBUG_
-	printDbgMessage(4, false);
-#endif
-	enqueue(&g_StEventFifo, EVT_BTN4_LONG_PRESS);
-}
+void btn1CbShort() { enqueue(&g_StEventFifo, EVT_BTN1_SHORT_PRESS); }
+void btn1CbLong() {  enqueue(&g_StEventFifo, EVT_BTN1_LONG_PRESS); }
+void btn2CbShort() { enqueue(&g_StEventFifo, EVT_BTN2_SHORT_PRESS); }
+void btn2CbLong() {  enqueue(&g_StEventFifo, EVT_BTN2_LONG_PRESS); }
+void btn3CbShort() { enqueue(&g_StEventFifo, EVT_BTN3_SHORT_PRESS); }
+void btn3CbLong() {  enqueue(&g_StEventFifo, EVT_BTN3_LONG_PRESS); }
+void btn4CbShort() { enqueue(&g_StEventFifo, EVT_BTN4_SHORT_PRESS); }
+void btn4CbLong() {  enqueue(&g_StEventFifo, EVT_BTN4_LONG_PRESS); }
 
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
 	char msgBuf[64];
-	sprintf(msgBuf, "btn%d %s pressed!!", btnNumber,
-			bIsShortPress ? "short" : "long");
+	sprintf(msgBuf, "btn%d %s pressed!!", btnNumber, bIsShortPress ? "short" : "long");
 	OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
+	OLED_Display();
+}
+
+void showManagementEntryScreen(uint8_t curPos){
+
+	//OLED_Init();
+	//OLED_Clear();
+	OLED_Show_Str(0 , 0,      "Options",       Font8x13, 0);
+	OLED_Show_Str(0, 64-13*3, "Date/Time Set", Font8x13, curPos == 0);
+	OLED_Show_Str(0, 64-13*2, "Alarm Set",     Font8x13, curPos == 1);
+	OLED_Show_Str(0, 64-13*1, "Sleep Mode Set", Font8x13, curPos == 2);
 	OLED_Display();
 }
 
