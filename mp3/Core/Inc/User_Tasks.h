@@ -44,11 +44,32 @@ typedef enum eBtnEvent {
 	,EVT_IS_ENTRY
 } eBtnEvent_t;
 
+typedef enum eTimeAction{
+	E_INCREASE, E_DECREASE
+}ETimeAction_t;
 typedef struct{
 	uint8_t head;
 	uint8_t tail;
 	eBtnEvent_t eBtnEventBuf[256];
 }StEventFifo_t;
+
+typedef struct{
+	uint16_t usYear;
+	uint8_t	 ucMonth;
+	uint8_t	 ucDay;
+}StDate_t;
+
+typedef struct{
+	uint8_t ucHour;
+	uint8_t ucMinute;
+	uint8_t ucSecond;
+}StTime_t;
+
+typedef struct{
+	StDate_t stDate;
+	StTime_t stTime;
+	uint8_t curPos;
+}StDateTime_t;
 
 typedef void (*callBack)();
 
@@ -75,7 +96,7 @@ void updateSleepMode();
 
 void showMainMenuEntryScreen();
 void showManagementEntryScreen(uint8_t curPos);
-void showDateTimeEntryScreen();
+void showDateTimeEntryScreen(StDateTime_t *pStDateTime);
 void showAlarmSetEntryScreen();
 void showSleepModeEntryScreen();
 

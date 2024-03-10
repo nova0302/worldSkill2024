@@ -14,7 +14,6 @@ void OLED_SPI_Write(uint8_t data, uint8_t mode)
     OLED_D0_GPIO_Port->BSRR = OLED_D0_Pin;
   }
 }
-
 void OLED_Clear(void)
 {
   for(uint8_t y=0; y<8; y++)
@@ -25,7 +24,6 @@ void OLED_Clear(void)
     for(uint8_t x=0; x<128; x++) OLED_SPI_Write(0x00, OLED_DATA);
   }
 }
-
 void OLED_Init(void)
 {
   OLED_RES_GPIO_Port->BRR = OLED_RES_Pin;
@@ -59,22 +57,16 @@ void OLED_Init(void)
   OLED_Clear();
   HAL_Delay(100);
 }
-
 void OLED_Set_Pos(uint8_t x, uint8_t y)
 {
   OLED_SPI_Write(0xB0 + y, OLED_CMD);
   OLED_SPI_Write((x & 0x0F), OLED_CMD);
   OLED_SPI_Write(((x & 0xF0) >> 4) | 0x10, OLED_CMD);
 }
-
-void OLED_Display(void)
-{
-  for(uint8_t x=0; x<128; x++)
-  {
-    for(uint8_t y=0; y<8; y++)
-    {
-      if(Display_Buffer_Cheak[y][x] != Display_Buffer[y][x])
-      {
+void OLED_Display(void) {
+  for(uint8_t x=0; x<128; x++) {
+    for(uint8_t y=0; y<8; y++) {
+      if(Display_Buffer_Cheak[y][x] != Display_Buffer[y][x]) {
         Display_Buffer_Cheak[y][x] = Display_Buffer[y][x];
         OLED_Set_Pos(x, y);
         OLED_SPI_Write(Display_Buffer[y][x], OLED_DATA);
@@ -82,23 +74,17 @@ void OLED_Display(void)
     }
   }
 }
-
-void OLED_Buffer_Clear(void)
-{
+void OLED_Buffer_Clear(void) {
   memset(Display_Buffer, 0x00, sizeof(Display_Buffer));
 }
-
 // type: 0 - Erase, 1 - Write, 2 - Toggle
-void OLED_Set_Point(uint8_t x, uint8_t y, uint8_t type)
-{
-  if(x<128 && y<64)
-  {
+void OLED_Set_Point(uint8_t x, uint8_t y, uint8_t type) {
+  if(x<128 && y<64) {
     if(type == 0) Display_Buffer[y/8][x] &= ~(0x01 << (y%8));
     if(type == 1) Display_Buffer[y/8][x] |= 0x01 << (y%8);
     if(type == 2) Display_Buffer[y/8][x] ^= 0x01 << (y%8);
   }
 }
-
 void OLED_Line(int x_start, int y_start, int x_end, int y_end, uint8_t type)
 {
   int t;
@@ -146,7 +132,6 @@ void OLED_Line(int x_start, int y_start, int x_end, int y_end, uint8_t type)
     }
   }
 }
-
 // type: 0 - Erase, 1 - Write, 2 - Toggle
 void OLED_Fill(uint8_t X_Start,uint8_t Y_Start,uint8_t X_End,uint8_t Y_End,uint8_t Type)
 {
@@ -154,7 +139,6 @@ void OLED_Fill(uint8_t X_Start,uint8_t Y_Start,uint8_t X_End,uint8_t Y_End,uint8
     for (uint8_t y = Y_Start; y <= Y_End; y++)
       OLED_Set_Point(x, y, Type);
 }
-
 // type: 0 - Erase, 1 - Write, 2 - Toggle
 void OLED_Circle(int x_start, int y_start, int r, uint8_t type)
 {
@@ -180,50 +164,39 @@ void OLED_Circle(int x_start, int y_start, int r, uint8_t type)
     F += 4*y+2;
   }
 }
-
 // invert: 0 - None, 1 - Invert
-void OLED_Show_Str(uint8_t x, uint8_t y, char *str, Font_Size size, uint8_t invert)
-{
+void OLED_Show_Str(uint8_t x, uint8_t y, char *str, Font_Size size, uint8_t invert) {
   uint8_t ch, i, j;
   uint8_t size_x, size_y, space_x;
   uint16_t data, shift;
 
-  if(size == Font8x13)
-  {
+  if(size == Font8x13) {
     size_x = 8;
     size_y = 13;
     space_x = 0;
     shift = 0x80;
-  }
-  else if(size == Font12x22)
-  {
+  } else if(size == Font12x22) {
     size_x = 12;
     size_y = 22;
     space_x = 3;
     shift = 0x8000;
-  }
-  else return;
+  } else return;
 
-  while (*str != '\0')
-  {
+  while (*str != '\0') {
     if(x > 128-size_x) break;
     if(y > 64-size_y) break;
 
-    if(size == Font8x13) ch = (*str - ' ')<95 ? (*str - ' ') : 0;
-    if(size == Font12x22) ch = (*str - '0')<11 ? (*str - '0') : 0;
+    if(size == Font8x13)  ch = (*str - ' ') < 95 ? (*str - ' ') : 0;
+    if(size == Font12x22) ch = (*str - '0') < 11 ? (*str - '0') : 0;
     str++;
-
-    for(i=0; i<size_y; i++)
-    {
-      for(j=0; j<size_x; j++)
-      {
+    for(i=0; i<size_y; i++) {
+      for(j=0; j<size_x; j++) {
         if(size == Font8x13) data = F8X13[ch][i];
         if(size == Font12x22) data = F12X22[ch][i];
         if(invert) data = ~data;
         OLED_Set_Point(x+j, y+i, (data & (shift>>j)) ? 1 : 0);
       }
     }
-
     x += size_x+space_x;
   }
 }
@@ -243,3 +216,39 @@ void OLED_Show_Picture(uint8_t Show_X, uint8_t Show_Y, uint8_t Picture_X, uint8_
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

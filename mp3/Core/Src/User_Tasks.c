@@ -71,6 +71,16 @@ void loop(void) {
 		}
 	}
 }
+/*
+void updateDateTime(StDateTime_t *pStDateTime, ETimeAction_t action){
+	if (E_INCREASE == action) {
+
+	}else{
+
+	}
+
+}
+*/
 void updateMainMenu() {
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -133,15 +143,78 @@ void updateManagementMenu() {
 		default: break;
 	}
 }
+uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime){
+	uint8_t ret = 0xff;
+	switch (pStDateTime->stDate.ucMonth) {
+		case 1:
+		case 3:
+		case 5:
+		case 7:
+		case 8:
+		case 10:
+		case 12: ret = 31; break;
+		case 6:
+		case 9:
+		case 11: ret = 30; break;
+		case 2:
+			//계산해서 리턴
+			uint16_t usYear = pStDateTime->stDate.usYear;
+			if (
+					(((usYear % 4)   == 0 ) &&
+					 ((usYear % 100) != 0 )) ||
+					((usYear % 400) == 0)) {
+				ret = 29;
+			}else{
+				ret = 28;
+			}
+			break;
+		default: break;
+	}
+	return ret;
+}
+void incDateTime(StDateTime_t *pStDateTime){
+	if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
+	switch (pStDateTime->curPos) {
+		case 0:
+			if (++pStDateTime->stDate.usYear > 2099)
+				pStDateTime->stDate.usYear = 2000;
+			break;
+		case 1:
+			if (++pStDateTime->stDate.ucMonth > 12)
+				pStDateTime->stDate.ucMonth= 1;
+			break;
+		case 2:
+			if (++pStDateTime->stDate.ucDay > getLastDayOfMonth(pStDateTime))
+				pStDateTime->stDate.ucDay= 1;
+			break;
+		case 3:
+			if (++pStDateTime->stTime.ucHour > 23)
+				pStDateTime->stTime.ucHour= 0;
+			break;
+		case 4:
+			if (++pStDateTime->stTime.ucMinute > 59)
+				pStDateTime->stTime.ucMinute = 0;
+			break;
+		case 5:
+			if (++pStDateTime->stTime.ucSecond > 59)
+				pStDateTime->stTime.ucSecond = 0;
+			break;
+		default: break;
+	}
+}
+void increaseDateTime(StDateTime_t *pStDateTime){
+}
 void updateDateTime(){
+	static StDateTime_t stDateTime;
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
 		case EVT_IS_ENTRY:
 			OLED_Buffer_Clear();
-			showDateTimeEntryScreen();
+			showDateTimeEntryScreen(&stDateTime);
 			break;
-		case EVT_BTN1_SHORT_PRESS: showDateTimeEntryScreen(); break;
+		case EVT_BTN1_SHORT_PRESS:
+			showDateTimeEntryScreen(&stDateTime); break;
 		case EVT_BTN2_SHORT_PRESS: break;
 		case EVT_BTN3_SHORT_PRESS: break;
 		case EVT_BTN4_SHORT_PRESS:
@@ -185,16 +258,22 @@ void showMainMenuEntryScreen(){
 	OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
 	OLED_Display();
 }
-void showDateTimeEntryScreen(){
+void showDateTimeEntryScreen(StDateTime_t *pStDateTime){
+
 	char msgBuf[32];
-	uint16_t year=2000, month=3, day=10;
-	uint16_t h=11, m=33, s=33;
 	OLED_Show_Str(0 , 0,      "DATE/TIME SET", Font8x13, 0);
 
-	sprintf(msgBuf, "%4d - %02d - %02d", year, month, day);
+	sprintf(msgBuf, "%4d - %02d - %02d"
+			,pStDateTime->stDate.usYear
+			,pStDateTime->stDate.ucMonth
+			,pStDateTime->stDate.ucDay
+			);
 	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, 0);
 
-	sprintf(msgBuf, "%d : %d : %d", h, m, s);
+	sprintf(msgBuf, "%d : %d : %d"
+			,pStDateTime->stTime.ucHour
+			,pStDateTime->stTime.ucMinute
+			,pStDateTime->stTime.ucSecond);
 	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
 	OLED_Display();
 }
