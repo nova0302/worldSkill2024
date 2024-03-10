@@ -64,6 +64,12 @@ typedef struct{
 	uint8_t ucMinute;
 	uint8_t ucSecond;
 }StTime_t;
+typedef struct{
+	uint8_t ucHour;
+	uint8_t ucMinute;
+	uint8_t curPos;
+	bool bEnable;
+}StAlarmTime_t;
 
 typedef struct{
 	StDate_t stDate;
@@ -100,8 +106,19 @@ void updateSleepMode();
 void showMainMenuEntryScreen();
 void showManagementEntryScreen(uint8_t curPos);
 void showDateTimeEntryScreen(StDateTime_t *pStDateTime);
-void showAlarmSetEntryScreen();
+//void showAlarmSetEntryScreen();
+void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime);
 void showSleepModeEntryScreen();
+
+void initDateTime(StDateTime_t *pStDateTime);
+void incDateTime(StDateTime_t *pStDateTime);
+void decDateTime(StDateTime_t *pStDateTime);
+uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime);
+
+
+void incAlarmTime(StAlarmTime_t *pStAlarmTime);
+void decAlarmTime(StAlarmTime_t *pStAlarmTime);
+
 
 
 #endif

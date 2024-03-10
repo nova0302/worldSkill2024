@@ -13,10 +13,12 @@ uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0, Sleep_Sec = 0
 uint8_t sw_flag = 0,  sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
+	StAlarmTime_t g_stAlarmTime;
 uint16_t g_trackNo;
 uint16_t g_numTotalTrack;
 SystemState_t g_SystemState;
 StEventFifo_t g_StEventFifo;
+static StDateTime_t g_StDateTime;
 
 void initQueue(StEventFifo_t *pFifo){ pFifo->head = pFifo->tail = 0; }
 void enqueue(StEventFifo_t *pFifo, eBtnEvent_t btnEvent) {
@@ -40,11 +42,10 @@ void Volume_Down() {
 	DFSetVolume(Volume);
 	eeprom_8bit_write(0, Volume);
 }
-void Alarm_Handler() {
-
-}
+void Alarm_Handler() { }
 void initApp() {
 	start_P();
+	initDateTime(&g_StDateTime);
 	g_numTotalTrack = DFGetTotalTrack();
 
 	// EepromLoad();
@@ -71,6 +72,7 @@ void loop(void) {
 		}
 	}
 }
+
 void updateMainMenu() {
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -95,10 +97,22 @@ void updateAlarmSet() {
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
 		case EVT_IS_ENTRY:
-			OLED_Buffer_Clear(); showAlarmSetEntryScreen();  break;
-		case EVT_BTN1_SHORT_PRESS: break;
-		case EVT_BTN2_SHORT_PRESS: break;
-		case EVT_BTN3_SHORT_PRESS: break;
+			OLED_Buffer_Clear();
+			showAlarmSetEntryScreen(&g_stAlarmTime);
+			break;
+		case EVT_BTN1_SHORT_PRESS:
+			incAlarmTime(&g_stAlarmTime);
+			showAlarmSetEntryScreen(&g_stAlarmTime);
+			break;
+		case EVT_BTN2_SHORT_PRESS:
+			decAlarmTime(&g_stAlarmTime);
+			showAlarmSetEntryScreen(&g_stAlarmTime);
+			break;
+		case EVT_BTN3_SHORT_PRESS:
+			if (++g_stAlarmTime.curPos > 2)
+				g_stAlarmTime.curPos = 0;
+			showAlarmSetEntryScreen(&g_stAlarmTime);
+			break;
 		case EVT_BTN4_SHORT_PRESS:
 			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 			g_SystemState = ST_SYS_MANAGEMENT; break;
@@ -133,49 +147,24 @@ void updateManagementMenu() {
 		default: break;
 	}
 }
-void incDateTime(StDateTime_t *pStDateTime){
-	if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
-	switch (pStDateTime->curPos) {
-		case 0:
-			if (++pStDateTime->stDate.usYear > 2099)
-				pStDateTime->stDate.usYear = 2000;
-			break;
-		case 1:
-			if (++pStDateTime->stDate.ucMonth > 12)
-				pStDateTime->stDate.ucMonth= 1;
-			break;
-		case 2:
-			if (++pStDateTime->stDate.ucDay > getLastDayOfMonth(pStDateTime))
-				pStDateTime->stDate.ucDay= 1;
-			break;
-		case 3:
-			if (++pStDateTime->stTime.ucHour > 23)
-				pStDateTime->stTime.ucHour= 0;
-			break;
-		case 4:
-			if (++pStDateTime->stTime.ucMinute > 59)
-				pStDateTime->stTime.ucMinute = 0;
-			break;
-		case 5:
-			if (++pStDateTime->stTime.ucSecond > 59)
-				pStDateTime->stTime.ucSecond = 0;
-			break;
-		default: break;
-	}
-}
 void updateDateTime(){
-	static StDateTime_t stDateTime;
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
 		case EVT_IS_ENTRY:
 			OLED_Buffer_Clear();
-			showDateTimeEntryScreen(&stDateTime);
+			showDateTimeEntryScreen(&g_StDateTime);
 			break;
 		case EVT_BTN1_SHORT_PRESS:
-			showDateTimeEntryScreen(&stDateTime); break;
-		case EVT_BTN2_SHORT_PRESS: break;
-		case EVT_BTN3_SHORT_PRESS: break;
+			incDateTime(&g_StDateTime);
+			showDateTimeEntryScreen(&g_StDateTime); break;
+		case EVT_BTN2_SHORT_PRESS:
+			decDateTime(&g_StDateTime);
+			showDateTimeEntryScreen(&g_StDateTime); break;
+		case EVT_BTN3_SHORT_PRESS:
+			if (++g_StDateTime.curPos > 6)
+				g_StDateTime.curPos = 0;
+			break;
 		case EVT_BTN4_SHORT_PRESS:
 			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 			g_SystemState = ST_SYS_MANAGEMENT; break;
@@ -222,27 +211,38 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime){
 	char msgBuf[32];
 	OLED_Show_Str(0 , 0,      "DATE/TIME SET", Font8x13, 0);
 
-	sprintf(msgBuf, "%4d - %02d - %02d"
-			,pStDateTime->stDate.usYear
-			,pStDateTime->stDate.ucMonth
-			,pStDateTime->stDate.ucDay
-			);
-	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, 0);
+	sprintf(msgBuf, "%4d -" ,pStDateTime->stDate.usYear);
+	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 0);
 
-	sprintf(msgBuf, "%d : %d : %d"
-			,pStDateTime->stTime.ucHour
-			,pStDateTime->stTime.ucMinute
-			,pStDateTime->stTime.ucSecond);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
+	sprintf(msgBuf, " %02d -" ,pStDateTime->stDate.ucMonth);
+	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 1);
+
+	sprintf(msgBuf, " % 02d" ,pStDateTime->stDate.ucDay);
+	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 2);
+
+	sprintf(msgBuf, "%d :" ,pStDateTime->stTime.ucHour);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 3);
+
+	sprintf(msgBuf, "%d :" ,pStDateTime->stTime.ucMinute);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 4);
+
+	sprintf(msgBuf, "%d :" ,pStDateTime->stTime.ucSecond);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 5);
+
 	OLED_Display();
 }
-void showAlarmSetEntryScreen(){
+void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime){
 	char msgBuf[32];
-	uint16_t h=11, m=33;
-	OLED_Show_Str(0 , 0,      "SLEEP MODE SET", Font8x13, 0);
-	OLED_Show_Str(0, 64-13*3, "Enable: ON", Font8x13, 0);
-	sprintf(msgBuf, "%d : %d", h, m);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
+	OLED_Show_Str(0 , 0,      "ALARM SET", Font8x13, 0);
+	OLED_Show_Str(0, 64-13*3, "Enable: ", Font8x13, 0);
+	OLED_Show_Str(0, 64-13*3, " ON", Font8x13, pStAlarmTime->curPos ==0);
+
+	sprintf(msgBuf, "%02d :", pStAlarmTime->ucHour);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStAlarmTime->curPos == 1);
+
+	sprintf(msgBuf, "%02d", pStAlarmTime->ucMinute);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStAlarmTime->curPos == 2);
+
 	OLED_Display();
 }
 void showSleepModeEntryScreen(){
@@ -254,7 +254,6 @@ void showSleepModeEntryScreen(){
 	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
 	OLED_Display();
 }
-
 void start_P() {
 	OLED_Show_Picture(13, 25, 102, 5, Bar_Icon);
 
@@ -292,6 +291,7 @@ void start_P() {
 	OLED_Display();
 	HAL_Delay(100);
 }
+
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong) {
 	pBtn->port = port;
 	pBtn->pin = pin;
@@ -300,6 +300,7 @@ void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbSh
 	pBtn->cbShort = cbShort;
 	pBtn->cbLong = cbLong;
 }
+
 void updateBtn(btnProcess_t *pBtn) {
 
 	uint32_t now = HAL_GetTick();
@@ -333,6 +334,7 @@ void updateBtn(btnProcess_t *pBtn) {
 		break;
 	}
 }
+
 void btn1CbShort() { enqueue(&g_StEventFifo, EVT_BTN1_SHORT_PRESS); }
 void btn1CbLong() {  enqueue(&g_StEventFifo, EVT_BTN1_LONG_PRESS); }
 void btn2CbShort() { enqueue(&g_StEventFifo, EVT_BTN2_SHORT_PRESS); }
@@ -341,13 +343,13 @@ void btn3CbShort() { enqueue(&g_StEventFifo, EVT_BTN3_SHORT_PRESS); }
 void btn3CbLong() {  enqueue(&g_StEventFifo, EVT_BTN3_LONG_PRESS); }
 void btn4CbShort() { enqueue(&g_StEventFifo, EVT_BTN4_SHORT_PRESS); }
 void btn4CbLong() {  enqueue(&g_StEventFifo, EVT_BTN4_LONG_PRESS); }
+
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
 	char msgBuf[64];
 	sprintf(msgBuf, "btn%d %s pressed!!", btnNumber, bIsShortPress ? "short" : "long");
 	OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
 	OLED_Display();
 }
-
 uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime){
 
 	uint8_t ret = 0xff;
@@ -368,7 +370,7 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime){
 			if (
 					(((usYear % 4)   == 0 ) &&
 					 ((usYear % 100) != 0 )) ||
-					((usYear % 400) == 0)) {
+					 ((usYear % 400) == 0)) {
 				ret = 29;
 			}else{
 				ret = 28;
@@ -378,4 +380,133 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime){
 	}
 	return ret;
 }
+
+void incDateTime(StDateTime_t *pStDateTime){
+	//if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
+	switch (pStDateTime->curPos) {
+		case 0:
+			if (++pStDateTime->stDate.usYear > 2099)
+				pStDateTime->stDate.usYear = 2000;
+			break;
+		case 1:
+			if (++pStDateTime->stDate.ucMonth > 12)
+				pStDateTime->stDate.ucMonth= 1;
+			break;
+		case 2:
+			if (++pStDateTime->stDate.ucDay > getLastDayOfMonth(pStDateTime))
+				pStDateTime->stDate.ucDay= 1;
+			break;
+		case 3:
+			if (++pStDateTime->stTime.ucHour > 23)
+				pStDateTime->stTime.ucHour= 0;
+			break;
+		case 4:
+			if (++pStDateTime->stTime.ucMinute > 59)
+				pStDateTime->stTime.ucMinute = 0;
+			break;
+		case 5:
+			if (++pStDateTime->stTime.ucSecond > 59)
+				pStDateTime->stTime.ucSecond = 0;
+			break;
+		default: break;
+	}
+}
+void decDateTime(StDateTime_t *pStDateTime){
+	//if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
+	switch (pStDateTime->curPos) {
+		case 0:
+			if (--pStDateTime->stDate.usYear < 2000)
+				pStDateTime->stDate.usYear = 2099;
+			break;
+		case 1:
+			if (--pStDateTime->stDate.ucMonth < 1)
+				pStDateTime->stDate.ucMonth= 12;
+			break;
+		case 2:
+			if (--pStDateTime->stDate.ucDay < 1)
+				pStDateTime->stDate.ucDay= getLastDayOfMonth(pStDateTime) ;
+			break;
+		case 3:
+			if (--pStDateTime->stTime.ucHour < 0)
+				pStDateTime->stTime.ucHour= 23;
+			break;
+		case 4:
+			if (--pStDateTime->stTime.ucMinute < 0)
+				pStDateTime->stTime.ucMinute = 59;
+			break;
+		case 5:
+			if (--pStDateTime->stTime.ucSecond < 0)
+				pStDateTime->stTime.ucSecond = 59;
+			break;
+		default: break;
+	}
+}
+
+void initDateTime(StDateTime_t *pStDateTime){
+	pStDateTime->curPos = 0;
+	pStDateTime->stDate.usYear = 2000;
+	pStDateTime->stDate.ucMonth = 1;
+	pStDateTime->stDate.ucDay = 1;
+	pStDateTime->stTime.ucHour = 0;
+	pStDateTime->stTime.ucMinute= 0;
+	pStDateTime->stTime.ucSecond= 0;
+}
+
+void incAlarmTime(StAlarmTime_t *pStAlarmTime){
+	switch (pStAlarmTime->curPos) {
+		case 0:
+			if (++pStAlarmTime->ucHour > 23)
+				pStAlarmTime->ucHour = 0;
+			break;
+		case 1:
+			if (++pStAlarmTime->ucMinute > 59)
+				pStAlarmTime->ucHour = 0;
+			break;
+		case 2:
+			pStAlarmTime->bEnable ^= 1;
+			break;
+		default:
+			break;
+	}
+}
+void decAlarmTime(StAlarmTime_t *pStAlarmTime){
+	switch (pStAlarmTime->curPos) {
+		case 0:
+			if (--pStAlarmTime->ucHour > 0)
+				pStAlarmTime->ucHour = 23;
+			break;
+		case 1:
+			if (pStAlarmTime->ucMinute > 0)
+				pStAlarmTime->ucHour = 59;
+			break;
+		case 2:
+			pStAlarmTime->bEnable ^= 1;
+			break;
+		default:
+			break;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
