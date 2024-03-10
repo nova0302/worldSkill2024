@@ -71,16 +71,6 @@ void loop(void) {
 		}
 	}
 }
-/*
-void updateDateTime(StDateTime_t *pStDateTime, ETimeAction_t action){
-	if (E_INCREASE == action) {
-
-	}else{
-
-	}
-
-}
-*/
 void updateMainMenu() {
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -143,35 +133,6 @@ void updateManagementMenu() {
 		default: break;
 	}
 }
-uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime){
-	uint8_t ret = 0xff;
-	switch (pStDateTime->stDate.ucMonth) {
-		case 1:
-		case 3:
-		case 5:
-		case 7:
-		case 8:
-		case 10:
-		case 12: ret = 31; break;
-		case 6:
-		case 9:
-		case 11: ret = 30; break;
-		case 2:
-			//계산해서 리턴
-			uint16_t usYear = pStDateTime->stDate.usYear;
-			if (
-					(((usYear % 4)   == 0 ) &&
-					 ((usYear % 100) != 0 )) ||
-					((usYear % 400) == 0)) {
-				ret = 29;
-			}else{
-				ret = 28;
-			}
-			break;
-		default: break;
-	}
-	return ret;
-}
 void incDateTime(StDateTime_t *pStDateTime){
 	if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
 	switch (pStDateTime->curPos) {
@@ -201,8 +162,6 @@ void incDateTime(StDateTime_t *pStDateTime){
 			break;
 		default: break;
 	}
-}
-void increaseDateTime(StDateTime_t *pStDateTime){
 }
 void updateDateTime(){
 	static StDateTime_t stDateTime;
@@ -389,5 +348,34 @@ void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
 	OLED_Display();
 }
 
+uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime){
 
+	uint8_t ret = 0xff;
+	switch (pStDateTime->stDate.ucMonth) {
+		case 1:
+		case 3:
+		case 5:
+		case 7:
+		case 8:
+		case 10:
+		case 12: ret = 31; break;
+		case 6:
+		case 9:
+		case 11: ret = 30; break;
+		case 2:
+			//계산해서 리턴
+			uint16_t usYear = pStDateTime->stDate.usYear;
+			if (
+					(((usYear % 4)   == 0 ) &&
+					 ((usYear % 100) != 0 )) ||
+					((usYear % 400) == 0)) {
+				ret = 29;
+			}else{
+				ret = 28;
+			}
+			break;
+		default: break;
+	}
+	return ret;
+}
 

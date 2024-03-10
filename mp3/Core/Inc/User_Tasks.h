@@ -83,6 +83,9 @@ typedef struct btnProcess {
 	callBack      cbLong;
 } btnProcess_t;
 
+uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime);
+void incDateTime(StDateTime_t *pStDateTime);
+
 void updateBtn(btnProcess_t *pBtn);
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong);
 void start_P() ;
