@@ -6,8 +6,9 @@
 #include "stdbool.h"
 #include "Control_Hardware.h"
 
-void loop(void);
+#define numBtn (4)
 
+void loop(void);
 void btn1CbShort();
 void btn1CbLong();
 void btn2CbShort();
@@ -17,8 +18,6 @@ void btn3CbLong();
 void btn4CbShort();
 void btn4CbLong();
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
-
-#define numBtn (4)
 
 typedef enum SystemState { ST_SYS_INIT
 	,ST_SYS_MAIN
@@ -65,16 +64,20 @@ typedef struct btnProcess {
 
 void updateBtn(btnProcess_t *pBtn);
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong);
+void start_P() ;
+
 void updateMainMenu();
 void updateManagementMenu();
 void updatePowerSave();
-void start_P() ;
+void updateDateTime();
+void updateAlarmSet();
+void updateSleepMode();
+
 void showMainMenuEntryScreen();
 void showManagementEntryScreen(uint8_t curPos);
 void showDateTimeEntryScreen();
 void showAlarmSetEntryScreen();
-void updateDateTime();
-void updateAlarmSet();
+void showSleepModeEntryScreen();
 
 
 #endif

@@ -1,3 +1,6 @@
+
+//https://meet.google.com/sqy-orzi-cnm
+
 #include <stdio.h>
 #include "User_Tasks.h"
 
@@ -10,8 +13,6 @@ uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0, Sleep_Sec = 0
 uint8_t sw_flag = 0,  sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
-bool     g_bUpdateScreen = false;
-uint8_t  g_CurLoc = 0; // 첫번제 칸
 uint16_t g_trackNo;
 uint16_t g_numTotalTrack;
 SystemState_t g_SystemState;
@@ -63,7 +64,7 @@ void loop(void) {
 		switch (g_SystemState) {
 		case ST_SYS_MAIN:       updateMainMenu();       break;
 		case ST_SYS_MANAGEMENT: updateManagementMenu(); break;
-		case ST_SYS_POW_SAVE:   updatePowerSave();      break;
+		case ST_SYS_POW_SAVE:   updateSleepMode();      break;
 		case ST_SYS_DATE_TIME:  updateDateTime();      break;
 		case ST_SYS_ALARM_SET:  updateAlarmSet();      break;
 		default: break;
@@ -149,16 +150,109 @@ void updateDateTime(){
 		default: break;
 	}
 }
-void updatePowerSave(){
+void updateSleepMode(){
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
+		case EVT_IS_ENTRY:
+			OLED_Buffer_Clear(); showSleepModeEntryScreen();  break;
 		case EVT_BTN1_SHORT_PRESS: break;
 		case EVT_BTN2_SHORT_PRESS: break;
 		case EVT_BTN3_SHORT_PRESS: break;
 		case EVT_BTN4_SHORT_PRESS: break;
 		default: break;
 	}
+}
+
+void showManagementEntryScreen(uint8_t curPos){
+	OLED_Show_Str(0 , 0,      "Options",       Font8x13, 0);
+	OLED_Show_Str(0, 64-13*3, "Date/Time Set", Font8x13, curPos == 0);
+	OLED_Show_Str(0, 64-13*2, "Alarm Set",     Font8x13, curPos == 1);
+	OLED_Show_Str(0, 64-13*1, "Sleep Mode Set", Font8x13, curPos == 2);
+	OLED_Display();
+}
+void showMainMenuEntryScreen(){
+	OLED_Clear();
+	OLED_Show_Picture(0, 0, 16, 16, Dir_Icon);
+	OLED_Show_Picture(100, 0, 16, 16, Alarm_Icon);
+	OLED_Show_Picture(120, 0, 8, 16, Battry_Icon);
+
+	sprintf(str_buf, "VOL:%02d", Volume);
+	OLED_Show_Str(40, 3, str_buf, Font8x13, 0);
+
+	//sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, Tr_all);
+	sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, g_numTotalTrack);
+	OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
+	OLED_Display();
+}
+void showDateTimeEntryScreen(){
+	char msgBuf[32];
+	uint16_t year=2000, month=3, day=10;
+	uint16_t h=11, m=33, s=33;
+	OLED_Show_Str(0 , 0,      "DATE/TIME SET", Font8x13, 0);
+
+	sprintf(msgBuf, "%4d - %02d - %02d", year, month, day);
+	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, 0);
+
+	sprintf(msgBuf, "%d : %d : %d", h, m, s);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
+	OLED_Display();
+}
+void showAlarmSetEntryScreen(){
+	char msgBuf[32];
+	uint16_t h=11, m=33;
+	OLED_Show_Str(0 , 0,      "SLEEP MODE SET", Font8x13, 0);
+	OLED_Show_Str(0, 64-13*3, "Enable: ON", Font8x13, 0);
+	sprintf(msgBuf, "%d : %d", h, m);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
+	OLED_Display();
+}
+void showSleepModeEntryScreen(){
+	char msgBuf[32];
+	uint16_t h=11, m=33;
+	OLED_Show_Str(0 , 0,      "SLEEP MODE SET", Font8x13, 0);
+	OLED_Show_Str(0, 64-13*3, "Enable: ON", Font8x13, 0);
+	sprintf(msgBuf, "%d : %d", h, m);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
+	OLED_Display();
+}
+
+void start_P() {
+	OLED_Show_Picture(13, 25, 102, 5, Bar_Icon);
+
+	OLED_Init();
+	OLED_Show_Str(52, 33, "00%", Font8x13, 0);
+	OLED_Display();
+	HAL_Delay(100);
+
+	PAJ7620_Init();
+	OLED_Show_Str(52, 33, "20%", Font8x13, 0);
+	OLED_Fill(13, 26, 33, 28, 1);
+	OLED_Display();
+	HAL_Delay(100);
+
+	Usart1_Init();
+	OLED_Show_Str(52, 33, "40%", Font8x13, 0);
+	OLED_Fill(13, 26, 53, 28, 1);
+	OLED_Display();
+	HAL_Delay(100);
+
+	DFR0299Init();
+	OLED_Show_Str(52, 33, "70%", Font8x13, 0);
+	OLED_Fill(13, 26, 83, 28, 1);
+	OLED_Display();
+	HAL_Delay(100);
+
+	Battery_ADC_Init();
+	OLED_Show_Str(52, 33, "80%", Font8x13, 0);
+	OLED_Fill(13, 26, 93, 28, 1);
+	OLED_Display();
+	HAL_Delay(100);
+
+	OLED_Show_Str(48, 33, "100%", Font8x13, 0);
+	OLED_Fill(13, 26, 113, 28, 1);
+	OLED_Display();
+	HAL_Delay(100);
 }
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong) {
 	pBtn->port = port;
@@ -215,95 +309,6 @@ void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
 	OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
 	OLED_Display();
 }
-void showManagementEntryScreen(uint8_t curPos){
-	OLED_Show_Str(0 , 0,      "Options",       Font8x13, 0);
-	OLED_Show_Str(0, 64-13*3, "Date/Time Set", Font8x13, curPos == 0);
-	OLED_Show_Str(0, 64-13*2, "Alarm Set",     Font8x13, curPos == 1);
-	OLED_Show_Str(0, 64-13*1, "Sleep Mode Set", Font8x13, curPos == 2);
-	OLED_Display();
-}
-void showMainMenuEntryScreen(){
-	OLED_Clear();
-	OLED_Show_Picture(0, 0, 16, 16, Dir_Icon);
-	OLED_Show_Picture(100, 0, 16, 16, Alarm_Icon);
-	OLED_Show_Picture(120, 0, 8, 16, Battry_Icon);
-
-	sprintf(str_buf, "VOL:%02d", Volume);
-	OLED_Show_Str(40, 3, str_buf, Font8x13, 0);
-
-	//sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, Tr_all);
-	sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, g_numTotalTrack);
-	OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
-	OLED_Display();
-}
-void showDateTimeEntryScreen(){
-	char msgBuf[32];
-	uint16_t year=2000, month=3, day=10;
-	uint16_t h=11, m=33, s=33;
-	OLED_Show_Str(0 , 0,      "DATE/TIME SET", Font8x13, 0);
-
-	sprintf(msgBuf, "%4d - %02d - %02d", year, month, day);
-	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, 0);
-
-	sprintf(msgBuf, "%d : %d : %d", h, m, s);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
-	OLED_Display();
-}
-void showAlarmSetEntryScreen(){
-	char msgBuf[32];
-	uint16_t h=11, m=33;
-	OLED_Show_Str(0 , 0,      "SLEEP MODE SET", Font8x13, 0);
-	OLED_Show_Str(0, 64-13*3, "Enable: ON", Font8x13, 0);
-	sprintf(msgBuf, "%d : %d", h, m);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
-	OLED_Display();
-}
-void start_P() {
-	OLED_Show_Picture(13, 25, 102, 5, Bar_Icon);
-
-	OLED_Init();
-	OLED_Show_Str(52, 33, "00%", Font8x13, 0);
-	OLED_Display();
-	HAL_Delay(100);
-
-	PAJ7620_Init();
-	OLED_Show_Str(52, 33, "20%", Font8x13, 0);
-	OLED_Fill(13, 26, 33, 28, 1);
-	OLED_Display();
-	HAL_Delay(100);
-
-	Usart1_Init();
-	OLED_Show_Str(52, 33, "40%", Font8x13, 0);
-	OLED_Fill(13, 26, 53, 28, 1);
-	OLED_Display();
-	HAL_Delay(100);
-
-	DFR0299Init();
-	OLED_Show_Str(52, 33, "70%", Font8x13, 0);
-	OLED_Fill(13, 26, 83, 28, 1);
-	OLED_Display();
-	HAL_Delay(100);
-
-	Battery_ADC_Init();
-	OLED_Show_Str(52, 33, "80%", Font8x13, 0);
-	OLED_Fill(13, 26, 93, 28, 1);
-	OLED_Display();
-	HAL_Delay(100);
-
-	OLED_Show_Str(48, 33, "100%", Font8x13, 0);
-	OLED_Fill(13, 26, 113, 28, 1);
-	OLED_Display();
-	HAL_Delay(100);
-}
-
-
-
-
-
-
-
-
-
 
 
 
