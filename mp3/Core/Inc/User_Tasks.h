@@ -24,7 +24,7 @@ typedef enum SystemState { ST_SYS_INIT
 	,ST_SYS_MAIN
 	,ST_SYS_MANAGEMENT
 	,ST_SYS_POW_SAVE
-	,ST_SYS_INIT3 } SystemState_t;
+	,ST_SYS_DATE_TIME } SystemState_t;
 
 typedef enum btnState { ST_IDLE, ST_DOWN, ST_SHORT_PRESSED, ST_LONG_PRESSED } StBtnState_t;
 
@@ -68,6 +68,8 @@ void updateManagementMenu();
 void updatePowerSave();
 void start_P() ;
 void showManagementEntryScreen(uint8_t curPos);
+void showDateTimeEntryScreen();
+void updateDateTime();
 
 
 #endif

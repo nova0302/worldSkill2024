@@ -89,6 +89,7 @@ void loop(void) {
 		case ST_SYS_MAIN:       updateMainMenu();       break;
 		case ST_SYS_MANAGEMENT: updateManagementMenu(); break;
 		case ST_SYS_POW_SAVE:   updatePowerSave();      break;
+		case ST_SYS_DATE_TIME:   updateDateTime();      break;
 		default: break;
 		}
 	}
@@ -130,12 +131,31 @@ void updateManagementMenu() {
 			if (++curPos > 2) curPos = 0;
 			showManagementEntryScreen(curPos);
 			break;
+		case EVT_BTN3_SHORT_PRESS:
+			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
+			g_SystemState = ST_SYS_DATE_TIME; break;
+			break;
+		case EVT_BTN4_SHORT_PRESS: break;
+		default: break;
+	}
+}
+void updateDateTime(){
+	eBtnEvent_t BtnEvent;
+	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
+	switch (BtnEvent) {
+		case EVT_IS_ENTRY:
+			OLED_Buffer_Clear();
+			showDateTimeEntryScreen();
+			break;
+		case EVT_BTN1_SHORT_PRESS:
+			showDateTimeEntryScreen();
+			break;
+		case EVT_BTN2_SHORT_PRESS: break;
 		case EVT_BTN3_SHORT_PRESS: break;
 		case EVT_BTN4_SHORT_PRESS: break;
 		default: break;
 	}
 }
-//https://meet.google.com/rjn-snwi-ptz
 
 void updatePowerSave(){
 	eBtnEvent_t BtnEvent;
@@ -209,13 +229,24 @@ void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
 }
 
 void showManagementEntryScreen(uint8_t curPos){
-
-	//OLED_Init();
-	//OLED_Clear();
 	OLED_Show_Str(0 , 0,      "Options",       Font8x13, 0);
 	OLED_Show_Str(0, 64-13*3, "Date/Time Set", Font8x13, curPos == 0);
 	OLED_Show_Str(0, 64-13*2, "Alarm Set",     Font8x13, curPos == 1);
 	OLED_Show_Str(0, 64-13*1, "Sleep Mode Set", Font8x13, curPos == 2);
+	OLED_Display();
+}
+
+void showDateTimeEntryScreen(){
+	char msgBuf[32];
+	uint16_t year=2000, month=3, day=10;
+	uint16_t h=11, m=33, s=33;
+	OLED_Show_Str(0 , 0,      "DATE/TIME SET", Font8x13, 0);
+
+	sprintf(msgBuf, "%4d - %02d - %02d", year, month, day);
+	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, 0);
+
+	sprintf(msgBuf, "%d : %d : %d", h, m, s);
+	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
 	OLED_Display();
 }
 
