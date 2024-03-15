@@ -72,7 +72,6 @@ void loop(void) {
 		}
 	}
 }
-
 void updateMainMenu() {
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -184,7 +183,6 @@ void updateSleepMode(){
 		default: break;
 	}
 }
-
 void showManagementEntryScreen(uint8_t curPos){
 	OLED_Show_Str(0 , 0,      "Options",       Font8x13, 0);
 	OLED_Show_Str(0, 64-13*3, "Date/Time Set", Font8x13, curPos == 0);
@@ -291,7 +289,6 @@ void start_P() {
 	OLED_Display();
 	HAL_Delay(100);
 }
-
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong) {
 	pBtn->port = port;
 	pBtn->pin = pin;
@@ -300,7 +297,6 @@ void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbSh
 	pBtn->cbShort = cbShort;
 	pBtn->cbLong = cbLong;
 }
-
 void updateBtn(btnProcess_t *pBtn) {
 
 	uint32_t now = HAL_GetTick();
@@ -380,7 +376,6 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime){
 	}
 	return ret;
 }
-
 void incDateTime(StDateTime_t *pStDateTime){
 	//if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
 	switch (pStDateTime->curPos) {
@@ -441,7 +436,6 @@ void decDateTime(StDateTime_t *pStDateTime){
 		default: break;
 	}
 }
-
 void initDateTime(StDateTime_t *pStDateTime){
 	pStDateTime->curPos = 0;
 	pStDateTime->stDate.usYear = 2000;
@@ -451,7 +445,6 @@ void initDateTime(StDateTime_t *pStDateTime){
 	pStDateTime->stTime.ucMinute= 0;
 	pStDateTime->stTime.ucSecond= 0;
 }
-
 void incAlarmTime(StAlarmTime_t *pStAlarmTime){
 	switch (pStAlarmTime->curPos) {
 		case 0:
@@ -484,6 +477,17 @@ void decAlarmTime(StAlarmTime_t *pStAlarmTime){
 			break;
 		default:
 			break;
+	}
+}
+void saveDateTimeToEeprom(StDateTime_t *pStDateTime){
+	uint16_t size = sizeof(StDateTime_t);
+	uint8_t *pChar = (uint8_t*)pStDateTime;
+
+	//uint8_t *pEepromBase = (uint8_t*)0x08007f00;
+
+	for (uint16_t i = 0; i < size; ++i) {
+		//eeprom_8bit_write(pEepromBase++ , *(pChar++));
+		eeprom_8bit_write(i , *pChar++);
 	}
 }
 

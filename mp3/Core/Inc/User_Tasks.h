@@ -8,17 +8,6 @@
 
 #define numBtn (4)
 
-void loop(void);
-void btn1CbShort();
-void btn1CbLong();
-void btn2CbShort();
-void btn2CbLong();
-void btn3CbShort();
-void btn3CbLong();
-void btn4CbShort();
-void btn4CbLong();
-void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
-
 typedef enum SystemState { ST_SYS_INIT
 	,ST_SYS_MAIN
 	,ST_SYS_MANAGEMENT
@@ -115,10 +104,19 @@ void incDateTime(StDateTime_t *pStDateTime);
 void decDateTime(StDateTime_t *pStDateTime);
 uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime);
 
-
 void incAlarmTime(StAlarmTime_t *pStAlarmTime);
 void decAlarmTime(StAlarmTime_t *pStAlarmTime);
 
+void loop(void);
+void btn1CbShort();
+void btn1CbLong();
+void btn2CbShort();
+void btn2CbLong();
+void btn3CbShort();
+void btn3CbLong();
+void btn4CbShort();
+void btn4CbLong();
+void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
 
 
 #endif
