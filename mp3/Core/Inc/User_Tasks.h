@@ -54,14 +54,14 @@ typedef struct{
 }StDate_t;
 
 typedef struct{
-	uint8_t ucHour;
-	uint8_t ucMinute;
-	uint8_t ucSecond;
+	int8_t cHour;
+	int8_t cMinute;
+	int8_t cSecond;
 }StTime_t;
 typedef struct{
-	uint8_t ucHour;
-	uint8_t ucMinute;
-	uint8_t curPos;
+	int8_t cHour;
+	int8_t cMinute;
+	int8_t curPos;
 	bool bEnable;
 }StAlarmTime_t;
 
@@ -70,6 +70,12 @@ typedef struct{
 	StTime_t stTime;
 	uint8_t curPos;
 }StDateTime_t;
+
+typedef struct{
+	StTime_t stTime;
+	bool bSleepMode;
+	int8_t curPos;
+}StSleepMode_t;
 
 typedef void (*callBack)();
 
@@ -124,5 +130,7 @@ void btn4CbLong();
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
 void saveToEeprom(uint8_t *pData, size_t size, enEepomBase_t base);
 void loadFromEeprom(uint8_t *pData, size_t size, enEepomBase_t base);
+void incSleepMode();
+void decSleepMode();
 
 #endif

@@ -13,12 +13,18 @@ uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0, Sleep_Sec = 0
 uint8_t sw_flag = 0,  sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
+uint16_t      g_trackNo;
+uint16_t      g_numTotalTrack;
+
 StAlarmTime_t g_stAlarmTime;
-uint16_t g_trackNo;
-uint16_t g_numTotalTrack;
 SystemState_t g_SystemState;
+StDateTime_t  g_StDateTime;
+
+StSleepMode_t g_StSleepMode;
+//StTime_t      g_StTimeSleepMode;
+//bool          g_bSleepMode;
+
 StEventFifo_t g_StEventFifo;
-static StDateTime_t g_StDateTime;
 
 void initQueue(StEventFifo_t *pFifo){ pFifo->head = pFifo->tail = 0; }
 void enqueue(StEventFifo_t *pFifo, eBtnEvent_t btnEvent) {
@@ -53,7 +59,7 @@ void initApp() {
 	enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 
 	enEepomBase_t base = DATE_TIME_OFFSET;
-	loadFromEeprom(&g_StDateTime, sizeof(StDateTime_t), base);
+	loadFromEeprom((uint8_t*)&g_StDateTime, sizeof(StDateTime_t), base);
 }
 void loop(void) {
 	initApp();
@@ -69,8 +75,8 @@ void loop(void) {
 		case ST_SYS_MAIN:       updateMainMenu();       break;
 		case ST_SYS_MANAGEMENT: updateManagementMenu(); break;
 		case ST_SYS_POW_SAVE:   updateSleepMode();      break;
-		case ST_SYS_DATE_TIME:  updateDateTime();      break;
-		case ST_SYS_ALARM_SET:  updateAlarmSet();      break;
+		case ST_SYS_DATE_TIME:  updateDateTime();       break;
+		case ST_SYS_ALARM_SET:  updateAlarmSet();       break;
 		default: break;
 		}
 	}
@@ -183,11 +189,28 @@ void updateSleepMode(){
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
 		case EVT_IS_ENTRY:
-			OLED_Buffer_Clear(); showSleepModeEntryScreen();  break;
-		case EVT_BTN1_SHORT_PRESS: break;
-		case EVT_BTN2_SHORT_PRESS: break;
-		case EVT_BTN3_SHORT_PRESS: break;
-		case EVT_BTN4_SHORT_PRESS: break;
+			OLED_Buffer_Clear();
+			showSleepModeEntryScreen();
+			break;
+		case EVT_BTN1_SHORT_PRESS:
+			incSleepMode();
+			showSleepModeEntryScreen();
+			break;
+		case EVT_BTN2_SHORT_PRESS:
+			decSleepMode();
+			showSleepModeEntryScreen();
+			break;
+		case EVT_BTN3_SHORT_PRESS:
+			if (++g_StSleepMode.curPos > 2) {
+				g_StSleepMode.curPos = 0;
+			}
+			showSleepModeEntryScreen();
+			break;
+		case EVT_BTN4_SHORT_PRESS:
+			enEepomBase_t offset = DATE_TIME_OFFSET;
+			saveToEeprom((uint8_t*)&g_StSleepMode, sizeof(StSleepMode_t), offset);
+			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
+			g_SystemState = ST_SYS_MANAGEMENT; break;
 		default: break;
 	}
 }
@@ -244,7 +267,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime){
 	OLED_Display();
 /////////////////////////////////  time
 	xPos = 0;
-	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.ucHour);
+	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.cHour);
 	OLED_Show_Str( xPos, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 3);
 	OLED_Display();
 
@@ -253,7 +276,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime){
 	OLED_Display();
 
 	xPos += 8;
-	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.ucMinute);
+	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.cMinute);
 	OLED_Show_Str( xPos, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 4);
 	OLED_Display();
 
@@ -262,7 +285,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime){
 	OLED_Display();
 
 	xPos += 8;
-	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.ucSecond);
+	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.cSecond);
 	OLED_Show_Str(xPos, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 5);
 	OLED_Display();
 }
@@ -272,21 +295,38 @@ void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime){
 	OLED_Show_Str(0, 64-13*3, "Enable: ", Font8x13, 0);
 	OLED_Show_Str(0, 64-13*3, " ON", Font8x13, pStAlarmTime->curPos ==0);
 
-	sprintf(msgBuf, "%02d :", pStAlarmTime->ucHour);
+	sprintf(msgBuf, "%02d :", pStAlarmTime->cHour);
 	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStAlarmTime->curPos == 1);
 
-	sprintf(msgBuf, "%02d", pStAlarmTime->ucMinute);
+	sprintf(msgBuf, "%02d", pStAlarmTime->cMinute);
 	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStAlarmTime->curPos == 2);
 
 	OLED_Display();
 }
 void showSleepModeEntryScreen(){
 	char msgBuf[32];
-	uint16_t h=11, m=33;
 	OLED_Show_Str(0 , 0,      "SLEEP MODE SET", Font8x13, 0);
-	OLED_Show_Str(0, 64-13*3, "Enable: ON", Font8x13, 0);
-	sprintf(msgBuf, "%d : %d", h, m);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, 1);
+
+	uint8_t xPos = 0;
+	sprintf(msgBuf, "%s", "Enable:");
+	OLED_Show_Str(xPos, 64-13*3, msgBuf, Font8x13, 0);
+
+	xPos += strlen(msgBuf);
+	sprintf(msgBuf, "%s", (g_StSleepMode.bSleepMode) ? "ON" : "OFF");
+	OLED_Show_Str(xPos, 64-13*3, msgBuf,     Font8x13, g_StSleepMode.curPos==0);
+
+	xPos = 0;
+	sprintf(msgBuf, "%02u", g_StSleepMode.stTime.cHour);
+	OLED_Show_Str(xPos, 64-13*2, msgBuf,     Font8x13, g_StSleepMode.curPos==1);
+
+	xPos +=  strlen(msgBuf) * 8;
+	OLED_Show_Str( xPos, 64-13*2, ":", Font8x13, 0);
+	OLED_Display();
+
+	xPos += 8;
+	sprintf(msgBuf, "%02u", g_StSleepMode.stTime.cMinute);
+	OLED_Show_Str(xPos, 64-13*2, msgBuf,     Font8x13, g_StSleepMode.curPos==2);
+
 	OLED_Display();
 }
 void start_P() {
@@ -431,16 +471,16 @@ void incDateTime(StDateTime_t *pStDateTime){
 				pStDateTime->stDate.ucDay= 1;
 			break;
 		case 3:
-			if (++pStDateTime->stTime.ucHour > 23)
-				pStDateTime->stTime.ucHour= 0;
+			if (++pStDateTime->stTime.cHour > 23)
+				pStDateTime->stTime.cHour= 0;
 			break;
 		case 4:
-			if (++pStDateTime->stTime.ucMinute > 59)
-				pStDateTime->stTime.ucMinute = 0;
+			if (++pStDateTime->stTime.cMinute > 59)
+				pStDateTime->stTime.cMinute = 0;
 			break;
 		case 5:
-			if (++pStDateTime->stTime.ucSecond > 59)
-				pStDateTime->stTime.ucSecond = 0;
+			if (++pStDateTime->stTime.cSecond > 59)
+				pStDateTime->stTime.cSecond = 0;
 			break;
 		default: break;
 	}
@@ -453,24 +493,24 @@ void decDateTime(StDateTime_t *pStDateTime){
 				pStDateTime->stDate.usYear = 2099;
 			break;
 		case 1:
-			if (--pStDateTime->stDate.ucMonth < 1)
+			if (--pStDateTime->stDate.ucMonth < 1)  // there is no 0 month
 				pStDateTime->stDate.ucMonth= 12;
 			break;
 		case 2:
-			if (--pStDateTime->stDate.ucDay < 1)
+			if (--pStDateTime->stDate.ucDay < 1)  // there is no 0 day
 				pStDateTime->stDate.ucDay= getLastDayOfMonth(pStDateTime) ;
 			break;
 		case 3:
-			if (--pStDateTime->stTime.ucHour < 0)
-				pStDateTime->stTime.ucHour= 23;
+			if (--pStDateTime->stTime.cHour < 0)
+				pStDateTime->stTime.cHour= 23;
 			break;
 		case 4:
-			if (--pStDateTime->stTime.ucMinute < 0)
-				pStDateTime->stTime.ucMinute = 59;
+			if (--pStDateTime->stTime.cMinute < 0)
+				pStDateTime->stTime.cMinute = 59;
 			break;
 		case 5:
-			if (--pStDateTime->stTime.ucSecond < 0)
-				pStDateTime->stTime.ucSecond = 59;
+			if (--pStDateTime->stTime.cSecond < 0)
+				pStDateTime->stTime.cSecond = 59;
 			break;
 		default: break;
 	}
@@ -480,19 +520,19 @@ void initDateTime(StDateTime_t *pStDateTime){
 	pStDateTime->stDate.usYear = 2000;
 	pStDateTime->stDate.ucMonth = 1;
 	pStDateTime->stDate.ucDay = 1;
-	pStDateTime->stTime.ucHour = 0;
-	pStDateTime->stTime.ucMinute= 0;
-	pStDateTime->stTime.ucSecond= 0;
+	pStDateTime->stTime.cHour = 0;
+	pStDateTime->stTime.cMinute= 0;
+	pStDateTime->stTime.cSecond= 0;
 }
 void incAlarmTime(StAlarmTime_t *pStAlarmTime){
 	switch (pStAlarmTime->curPos) {
 		case 0:
-			if (++pStAlarmTime->ucHour > 23)
-				pStAlarmTime->ucHour = 0;
+			if (++pStAlarmTime->cHour > 23)
+				pStAlarmTime->cHour = 0;
 			break;
 		case 1:
-			if (++pStAlarmTime->ucMinute > 59)
-				pStAlarmTime->ucHour = 0;
+			if (++pStAlarmTime->cMinute > 59)
+				pStAlarmTime->cHour = 0;
 			break;
 		case 2:
 			pStAlarmTime->bEnable ^= 1;
@@ -504,12 +544,12 @@ void incAlarmTime(StAlarmTime_t *pStAlarmTime){
 void decAlarmTime(StAlarmTime_t *pStAlarmTime){
 	switch (pStAlarmTime->curPos) {
 		case 0:
-			if (--pStAlarmTime->ucHour > 0)
-				pStAlarmTime->ucHour = 23;
+			if (--pStAlarmTime->cHour < 0)
+				pStAlarmTime->cHour = 23;
 			break;
 		case 1:
-			if (pStAlarmTime->ucMinute > 0)
-				pStAlarmTime->ucHour = 59;
+			if (--pStAlarmTime->cMinute < 0)
+				pStAlarmTime->cHour = 59;
 			break;
 		case 2:
 			pStAlarmTime->bEnable ^= 1;
@@ -526,6 +566,40 @@ void saveToEeprom(uint8_t *pData, size_t size, enEepomBase_t base){
 void loadFromEeprom(uint8_t *pData, size_t size, enEepomBase_t base){
 	for (int i = 0; i < size; ++i) {
 		*pData++ = eeprom_8bit_read(base+i);
+	}
+}
+void incSleepMode(){
+	switch (g_StSleepMode.curPos) {
+		case 0:
+			g_StSleepMode.bSleepMode ^= 1;
+			break;
+		case 1:
+			if (++g_StSleepMode.stTime.cHour > 23)
+				g_StSleepMode.stTime.cHour = 0;
+			break;
+		case 2:
+			if (++g_StSleepMode.stTime.cMinute > 59)
+				g_StSleepMode.stTime.cMinute = 0;
+			break;
+		default:
+			break;
+	}
+}
+void decSleepMode(){
+	switch (g_StSleepMode.curPos) {
+		case 0:
+			g_StSleepMode.bSleepMode ^= 1;
+			break;
+		case 1:
+			if (--g_StSleepMode.stTime.cHour < 0)
+				g_StSleepMode.stTime.cHour = 23;
+			break;
+		case 2:
+			if (--g_StSleepMode.stTime.cMinute < 10)
+				g_StSleepMode.stTime.cMinute = 59;
+			break;
+		default:
+			break;
 	}
 }
 
