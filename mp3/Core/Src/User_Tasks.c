@@ -60,6 +60,9 @@ void initApp() {
 
 	enEepomBase_t base = DATE_TIME_OFFSET;
 	loadFromEeprom((uint8_t*)&g_StDateTime, sizeof(StDateTime_t), base);
+
+	base = SLEEP_MODE_OFFSET;
+	loadFromEeprom((uint8_t*)&g_StSleepMode, sizeof(StSleepMode_t), base);
 }
 void loop(void) {
 	initApp();
@@ -207,7 +210,7 @@ void updateSleepMode(){
 			showSleepModeEntryScreen();
 			break;
 		case EVT_BTN4_SHORT_PRESS:
-			enEepomBase_t offset = DATE_TIME_OFFSET;
+			enEepomBase_t offset = SLEEP_MODE_OFFSET;
 			saveToEeprom((uint8_t*)&g_StSleepMode, sizeof(StSleepMode_t), offset);
 			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 			g_SystemState = ST_SYS_MANAGEMENT; break;
