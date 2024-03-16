@@ -33,9 +33,8 @@ typedef enum eBtnEvent {
 	,EVT_IS_ENTRY
 } eBtnEvent_t;
 
-typedef enum eTimeAction{
-	E_INCREASE, E_DECREASE
-}ETimeAction_t;
+typedef enum eTimeAction{ E_INCREASE, E_DECREASE }ETimeAction_t;
+
 typedef struct{
 	uint8_t head;
 	uint8_t tail;

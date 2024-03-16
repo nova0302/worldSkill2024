@@ -1,5 +1,5 @@
 
-//https://meet.google.com/sqy-orzi-cnm
+//https://meet.google.com/bpn-eadc-vxy
 
 #include <stdio.h>
 #include "User_Tasks.h"
@@ -13,7 +13,7 @@ uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0, Sleep_Sec = 0
 uint8_t sw_flag = 0,  sw_buf = 0, sw_it = 0;
 uint8_t sw_alarm_flag = 0;
 
-	StAlarmTime_t g_stAlarmTime;
+StAlarmTime_t g_stAlarmTime;
 uint16_t g_trackNo;
 uint16_t g_numTotalTrack;
 SystemState_t g_SystemState;
@@ -72,6 +72,8 @@ void loop(void) {
 		}
 	}
 }
+
+// each event process
 void updateMainMenu() {
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -88,6 +90,34 @@ void updateMainMenu() {
 		case EVT_BTN4_LONG_PRESS :
 			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 			g_SystemState = ST_SYS_MANAGEMENT; break;
+		default: break;
+	}
+}
+void updateManagementMenu() {
+	static int8_t curPos = 0;
+	eBtnEvent_t BtnEvent;
+	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
+	switch (BtnEvent) {
+		case EVT_IS_ENTRY:
+			curPos = 0;
+			OLED_Buffer_Clear();
+			showManagementEntryScreen(curPos);
+			break;
+		case EVT_BTN1_SHORT_PRESS:
+			if (--curPos < 0) curPos = 2;
+			showManagementEntryScreen(curPos);
+			break;
+		case EVT_BTN2_SHORT_PRESS:
+			if (++curPos > 2) curPos = 0;
+			showManagementEntryScreen(curPos);
+			break;
+		case EVT_BTN3_SHORT_PRESS:
+			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
+			g_SystemState = ST_SYS_DATE_TIME; break;
+			break;
+		case EVT_BTN4_SHORT_PRESS:
+			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
+			g_SystemState = ST_SYS_MAIN; break;
 		default: break;
 	}
 }
@@ -118,34 +148,6 @@ void updateAlarmSet() {
 		default: break;
 	}
 }
-void updateManagementMenu() {
-	static uint8_t curPos = 0;
-	eBtnEvent_t BtnEvent;
-	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-	switch (BtnEvent) {
-		case EVT_IS_ENTRY:
-			curPos = 0;
-			OLED_Buffer_Clear();
-			showManagementEntryScreen(curPos);
-			break;
-		case EVT_BTN1_SHORT_PRESS:
-			if (--curPos < 0) curPos = 2;
-			showManagementEntryScreen(curPos);
-			break;
-		case EVT_BTN2_SHORT_PRESS:
-			if (++curPos > 2) curPos = 0;
-			showManagementEntryScreen(curPos);
-			break;
-		case EVT_BTN3_SHORT_PRESS:
-			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
-			g_SystemState = ST_SYS_DATE_TIME; break;
-			break;
-		case EVT_BTN4_SHORT_PRESS:
-			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
-			g_SystemState = ST_SYS_MAIN; break;
-		default: break;
-	}
-}
 void updateDateTime(){
 	eBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -161,8 +163,9 @@ void updateDateTime(){
 			decDateTime(&g_StDateTime);
 			showDateTimeEntryScreen(&g_StDateTime); break;
 		case EVT_BTN3_SHORT_PRESS:
-			if (++g_StDateTime.curPos > 6)
+			if (++g_StDateTime.curPos > 5)
 				g_StDateTime.curPos = 0;
+			showDateTimeEntryScreen(&g_StDateTime); break;
 			break;
 		case EVT_BTN4_SHORT_PRESS:
 			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
@@ -183,10 +186,12 @@ void updateSleepMode(){
 		default: break;
 	}
 }
+
+// screen process
 void showManagementEntryScreen(uint8_t curPos){
-	OLED_Show_Str(0 , 0,      "Options",       Font8x13, 0);
-	OLED_Show_Str(0, 64-13*3, "Date/Time Set", Font8x13, curPos == 0);
-	OLED_Show_Str(0, 64-13*2, "Alarm Set",     Font8x13, curPos == 1);
+	OLED_Show_Str(0 , 0,      "Options",        Font8x13, 0);
+	OLED_Show_Str(0, 64-13*3, "Date/Time Set",  Font8x13, curPos == 0);
+	OLED_Show_Str(0, 64-13*2, "Alarm Set",      Font8x13, curPos == 1);
 	OLED_Show_Str(0, 64-13*1, "Sleep Mode Set", Font8x13, curPos == 2);
 	OLED_Display();
 }
@@ -209,24 +214,51 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime){
 	char msgBuf[32];
 	OLED_Show_Str(0 , 0,      "DATE/TIME SET", Font8x13, 0);
 
-	sprintf(msgBuf, "%4d -" ,pStDateTime->stDate.usYear);
-	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 0);
+/////////////////////////////////  date
+	uint8_t xPos =  0;
+	sprintf(msgBuf, "%4d" ,pStDateTime->stDate.usYear);
+	OLED_Show_Str( xPos, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 0);
+	OLED_Display();
 
-	sprintf(msgBuf, " %02d -" ,pStDateTime->stDate.ucMonth);
-	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 1);
+	xPos +=  strlen(msgBuf) * 8;
+	OLED_Show_Str( xPos, 64-13*3, "-", Font8x13, 0);
+	OLED_Display();
 
-	sprintf(msgBuf, " % 02d" ,pStDateTime->stDate.ucDay);
-	OLED_Show_Str(0, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 2);
+	xPos += 8;
+	sprintf(msgBuf, " %02d" ,pStDateTime->stDate.ucMonth);
+	OLED_Show_Str( xPos, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 1);
+	OLED_Display();
 
-	sprintf(msgBuf, "%d :" ,pStDateTime->stTime.ucHour);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 3);
+	xPos +=  strlen(msgBuf) * 8;
+	OLED_Show_Str( xPos, 64-13*3, "-", Font8x13, 0);
+	OLED_Display();
 
-	sprintf(msgBuf, "%d :" ,pStDateTime->stTime.ucMinute);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 4);
+	xPos += 8;
+	sprintf(msgBuf, "%02d" ,pStDateTime->stDate.ucDay);
+	OLED_Show_Str(xPos, 64-13*3, msgBuf, Font8x13, pStDateTime->curPos == 2);
+	OLED_Display();
+/////////////////////////////////  time
+	xPos = 0;
+	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.ucHour);
+	OLED_Show_Str( xPos, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 3);
+	OLED_Display();
 
-	sprintf(msgBuf, "%d :" ,pStDateTime->stTime.ucSecond);
-	OLED_Show_Str(0, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 5);
+	xPos +=  strlen(msgBuf) * 8;
+	OLED_Show_Str( xPos, 64-13*2, ":", Font8x13, 0);
+	OLED_Display();
 
+	xPos += 8;
+	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.ucMinute);
+	OLED_Show_Str( xPos, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 4);
+	OLED_Display();
+
+	xPos +=  strlen(msgBuf) * 8;
+	OLED_Show_Str( xPos, 64-13*2, ":", Font8x13, 0);
+	OLED_Display();
+
+	xPos += 8;
+	sprintf(msgBuf, "%02d" ,pStDateTime->stTime.ucSecond);
+	OLED_Show_Str(xPos, 64-13*2, msgBuf,     Font8x13, pStDateTime->curPos == 5);
 	OLED_Display();
 }
 void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime){
@@ -331,6 +363,7 @@ void updateBtn(btnProcess_t *pBtn) {
 	}
 }
 
+// btn event
 void btn1CbShort() { enqueue(&g_StEventFifo, EVT_BTN1_SHORT_PRESS); }
 void btn1CbLong() {  enqueue(&g_StEventFifo, EVT_BTN1_LONG_PRESS); }
 void btn2CbShort() { enqueue(&g_StEventFifo, EVT_BTN2_SHORT_PRESS); }
@@ -340,6 +373,7 @@ void btn3CbLong() {  enqueue(&g_StEventFifo, EVT_BTN3_LONG_PRESS); }
 void btn4CbShort() { enqueue(&g_StEventFifo, EVT_BTN4_SHORT_PRESS); }
 void btn4CbLong() {  enqueue(&g_StEventFifo, EVT_BTN4_LONG_PRESS); }
 
+// utility
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
 	char msgBuf[64];
 	sprintf(msgBuf, "btn%d %s pressed!!", btnNumber, bIsShortPress ? "short" : "long");
