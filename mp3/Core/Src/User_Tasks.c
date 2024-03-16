@@ -83,7 +83,7 @@ void loop(void) {
 			last = now;
 			if(g_bSleepMode){
 				if (--g_ui32SleepModeCounter > 0) {
-					g_ui32SleepModeCounter--;
+					//g_ui32SleepModeCounter;
 				}else{
 					g_bSleepMode = false;
 					enqueue(&g_StEventFifo, EVT_ON_POW_SAVE);
