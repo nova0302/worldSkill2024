@@ -95,17 +95,16 @@ void start_P() ;
 void updateBtn(btnProcess_t *pBtn);
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong);
 
-void updateMainMenu();
-void updateMenuSel();
-void updateSettingSleepMode();
-void updateSettingDateTime();
-void updateSettingAlarmSet();
-void updatePowerSave();
+void handleEvtMainMenu();
+void handleEvtMenuSel();
+void handleEvtSettingSleepMode();
+void handleEvtSettingDateTime();
+void handleEvtSettingAlarmSet();
+void handleEvtPowSaveMode();
 
 void showMainMenuEntryScreen();
 void showManagementEntryScreen(uint8_t curPos);
 void showDateTimeEntryScreen(StDateTime_t *pStDateTime);
-//void showAlarmSetEntryScreen();
 void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime);
 void showSleepModeEntryScreen();
 
@@ -125,12 +124,12 @@ void btn3CbShort();
 void btn3CbLong();
 void btn4CbShort();
 void btn4CbLong();
+
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
 void saveToEeprom(uint8_t *pData, size_t size, EnEepomBase_t base);
 void loadFromEeprom(uint8_t *pData, size_t size, EnEepomBase_t base);
 void incSleepMode();
 void decSleepMode();
-void updatePowSaveMode();
 void setSleepMode();
 void checkForPowerSave();
 void initBtns(btnProcess_t *pBtn );

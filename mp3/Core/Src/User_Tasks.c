@@ -79,19 +79,19 @@ void loop(void) {
 		for (int i = 0; i < numBtn; ++i) updateBtn(&btn[i]);
 
 		switch (g_SystemState) {
-		case ST_SYS_MAIN:              updateMainMenu();         break;
-		case ST_SYS_MENU_SEL:          updateMenuSel();          break;
-		case ST_SYS_SETTING_SLEEP:     updateSettingSleepMode(); break;
-		case ST_SYS_SETTING_DATE_TIME: updateSettingDateTime();  break;
-		case ST_SYS_SETTING_ALARM:     updateSettingAlarmSet();  break;
-		case ST_SYS_SLEEP_MODE:        updatePowSaveMode();      break;
+		case ST_SYS_MAIN:              handleEvtMainMenu();         break;
+		case ST_SYS_MENU_SEL:          handleEvtMenuSel();          break;
+		case ST_SYS_SETTING_SLEEP:     handleEvtSettingSleepMode(); break;
+		case ST_SYS_SETTING_DATE_TIME: handleEvtSettingDateTime();  break;
+		case ST_SYS_SETTING_ALARM:     handleEvtSettingAlarmSet();  break;
+		case ST_SYS_SLEEP_MODE:        handleEvtPowSaveMode();      break;
 		default: break;
 		}
 	}
 }
 
 // each event process
-void updateMainMenu() {
+void handleEvtMainMenu() {
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
@@ -115,7 +115,7 @@ void updateMainMenu() {
 	default: break;
 	}
 }
-void updateMenuSel() {
+void handleEvtMenuSel() {
 	static int8_t curPos = 0;
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -154,7 +154,7 @@ void updateMenuSel() {
 	default: break;
 	}
 }
-void updateSettingAlarmSet() {
+void handleEvtSettingAlarmSet() {
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent))
 		return;
@@ -187,7 +187,7 @@ void updateSettingAlarmSet() {
 	default: break;
 	}
 }
-void updateSettingDateTime() {
+void handleEvtSettingDateTime() {
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent))
 		return;
@@ -223,7 +223,7 @@ void updateSettingDateTime() {
 	default: break;
 	}
 }
-void updateSettingSleepMode() {
+void handleEvtSettingSleepMode() {
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
@@ -253,7 +253,7 @@ void updateSettingSleepMode() {
 	default: break;
 	}
 }
-void updatePowSaveMode(){
+void handleEvtPowSaveMode(){
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
@@ -289,7 +289,7 @@ void showMainMenuEntryScreen() {
 	OLED_Show_Str(40, 3, str_buf, Font8x13, 0);
 
 	//sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, Tr_all);
-	sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, g_numTotalTrack);
+	sprintf(str_buf, "Track:%02d/%02d", (int)Tr_now, (int)g_numTotalTrack);
 	OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
 	OLED_Display();
 }
@@ -396,7 +396,6 @@ void showSleepModeEntryScreen() {
 
 	OLED_Display();
 }
-
 void showPowSaveEntryScreen(){
 	char msgBuf[32];
 	sprintf(msgBuf, "%s", "SLEEP MODE");
