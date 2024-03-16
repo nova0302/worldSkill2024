@@ -72,32 +72,19 @@ void initApp() {
 void loop(void) {
 	initApp();
 	btnProcess_t btn[numBtn];
-	initBtn(&btn[0], SW1_GPIO_Port, SW1_Pin, btn1CbShort, btn1CbLong);
-	initBtn(&btn[1], SW2_GPIO_Port, SW2_Pin, btn2CbShort, btn2CbLong);
-	initBtn(&btn[2], SW3_GPIO_Port, SW3_Pin, btn3CbShort, btn3CbLong);
-	initBtn(&btn[3], SW4_GPIO_Port, SW4_Pin, btn4CbShort, btn4CbLong);
-	uint32_t last;
+
 	while (1) {
-		uint32_t now = HAL_GetTick();
-		if(now - last > 1000){
-			last = now;
-			if(g_bSleepMode){
-				if (--g_ui32SleepModeCounter > 0) {
-					//g_ui32SleepModeCounter;
-				}else{
-					g_bSleepMode = false;
-					enqueue(&g_StEventFifo, EVT_ON_POW_SAVE);
-				}
-			}
-		}
+
+		checkForPowerSave();
 		for (int i = 0; i < numBtn; ++i) updateBtn(&btn[i]);
+
 		switch (g_SystemState) {
-		case ST_SYS_MAIN:       updateMainMenu();       break;
-		case ST_SYS_MANAGEMENT: updateManagementMenu(); break;
-		case ST_SYS_POW_SAVE:   updateSleepMode();      break;
-		case ST_SYS_DATE_TIME:  updateDateTime();       break;
-		case ST_SYS_ALARM_SET:  updateAlarmSet();       break;
-		case ST_SYS_SLEEP_MODE: updatePowSaveMode();    break;
+		case ST_SYS_MAIN:              updateMainMenu();         break;
+		case ST_SYS_MENU_SEL:          updateMenuSel();          break;
+		case ST_SYS_SETTING_SLEEP:     updateSettingSleepMode(); break;
+		case ST_SYS_SETTING_DATE_TIME: updateSettingDateTime();  break;
+		case ST_SYS_SETTING_ALARM:     updateSettingAlarmSet();  break;
+		case ST_SYS_SLEEP_MODE:        updatePowSaveMode();      break;
 		default: break;
 		}
 	}
@@ -114,11 +101,11 @@ void updateMainMenu() {
 	case EVT_BTN2_SHORT_PRESS: DFPlayPreviousTrack(); break;
 	case EVT_BTN2_LONG_PRESS:  DFPause(); break;
 	case EVT_BTN3_SHORT_PRESS: Volume_Up(); break;
-	case EVT_BTN3_LONG_PRESS:  g_SystemState = ST_SYS_POW_SAVE; break;
+	case EVT_BTN3_LONG_PRESS:  g_SystemState = ST_SYS_SETTING_SLEEP; break;
 	case EVT_BTN4_SHORT_PRESS: Volume_Down(); break;
 	case EVT_BTN4_LONG_PRESS:
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
-		g_SystemState = ST_SYS_MANAGEMENT;
+		g_SystemState = ST_SYS_MENU_SEL;
 		break;
 	case EVT_ON_POW_SAVE:
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
@@ -128,7 +115,7 @@ void updateMainMenu() {
 	default: break;
 	}
 }
-void updateManagementMenu() {
+void updateMenuSel() {
 	static int8_t curPos = 0;
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -149,9 +136,9 @@ void updateManagementMenu() {
 	case EVT_BTN3_SHORT_PRESS:
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 		switch (curPos) {
-			case 0: g_SystemState = ST_SYS_DATE_TIME; break;
-			case 1: g_SystemState = ST_SYS_ALARM_SET; break;
-			case 2: g_SystemState = ST_SYS_POW_SAVE; break;
+			case 0: g_SystemState = ST_SYS_SETTING_DATE_TIME; break;
+			case 1: g_SystemState = ST_SYS_SETTING_ALARM; break;
+			case 2: g_SystemState = ST_SYS_SETTING_SLEEP; break;
 			default: break;
 		}
 		break;
@@ -167,7 +154,7 @@ void updateManagementMenu() {
 	default: break;
 	}
 }
-void updateAlarmSet() {
+void updateSettingAlarmSet() {
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent))
 		return;
@@ -190,7 +177,7 @@ void updateAlarmSet() {
 		break;
 	case EVT_BTN4_SHORT_PRESS:
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
-		g_SystemState = ST_SYS_MANAGEMENT;
+		g_SystemState = ST_SYS_MENU_SEL;
 		break;
 	case EVT_ON_POW_SAVE:
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
@@ -200,7 +187,7 @@ void updateAlarmSet() {
 	default: break;
 	}
 }
-void updateDateTime() {
+void updateSettingDateTime() {
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent))
 		return;
@@ -226,7 +213,7 @@ void updateDateTime() {
 		EnEepomBase_t offset = DATE_TIME_OFFSET;
 		saveToEeprom((uint8_t*) &g_StDateTime, sizeof(StDateTime_t), offset);
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
-		g_SystemState = ST_SYS_MANAGEMENT;
+		g_SystemState = ST_SYS_MENU_SEL;
 		break;
 	case EVT_ON_POW_SAVE:
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
@@ -236,7 +223,7 @@ void updateDateTime() {
 	default: break;
 	}
 }
-void updateSleepMode() {
+void updateSettingSleepMode() {
 	EnBtnEvent_t BtnEvent;
 	if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
 	switch (BtnEvent) {
@@ -255,7 +242,7 @@ void updateSleepMode() {
 		EnEepomBase_t offset = SLEEP_MODE_OFFSET;
 		saveToEeprom((uint8_t*) &g_StSleepMode, sizeof(StSleepMode_t), offset);
 		enqueue(&g_StEventFifo, EVT_IS_ENTRY);
-		g_SystemState = ST_SYS_MANAGEMENT;
+		g_SystemState = ST_SYS_MENU_SEL;
 	}
 		break;
 	case EVT_ON_POW_SAVE:
@@ -370,10 +357,10 @@ void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime) {
 	OLED_Show_Str(0, 64 - 13 * 3, "Enable: ", Font8x13, 0);
 	OLED_Show_Str(0, 64 - 13 * 3, " ON", Font8x13, pStAlarmTime->curPos == 0);
 
-	sprintf(msgBuf, "%02d :", pStAlarmTime->cHour);
+	sprintf(msgBuf, "%02d :", pStAlarmTime->stTime.cHour);
 	OLED_Show_Str(0, 64 - 13 * 2, msgBuf, Font8x13, pStAlarmTime->curPos == 1);
 
-	sprintf(msgBuf, "%02d", pStAlarmTime->cMinute);
+	sprintf(msgBuf, "%02d", pStAlarmTime->stTime.cMinute);
 	OLED_Show_Str(0, 64 - 13 * 2, msgBuf, Font8x13, pStAlarmTime->curPos == 2);
 
 	OLED_Display();
@@ -464,7 +451,6 @@ void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbSh
 	pBtn->cbLong = cbLong;
 }
 void updateBtn(btnProcess_t *pBtn) {
-
 	uint32_t now = HAL_GetTick();
 
 	switch (pBtn->btnState) {
@@ -496,8 +482,14 @@ void updateBtn(btnProcess_t *pBtn) {
 		break;
 	}
 }
+void initBtns(btnProcess_t *pBtn ){
+	initBtn(&pBtn[0], SW1_GPIO_Port, SW1_Pin, btn1CbShort, btn1CbLong);
+	initBtn(&pBtn[1], SW2_GPIO_Port, SW2_Pin, btn2CbShort, btn2CbLong);
+	initBtn(&pBtn[2], SW3_GPIO_Port, SW3_Pin, btn3CbShort, btn3CbLong);
+	initBtn(&pBtn[3], SW4_GPIO_Port, SW4_Pin, btn4CbShort, btn4CbLong);
+}
 
-// btn event
+// publish btn events
 void btn1CbShort() { enqueue(&g_StEventFifo, EVT_BTN1_SHORT_PRESS); }
 void btn1CbLong()  { enqueue(&g_StEventFifo, EVT_BTN1_LONG_PRESS); }
 void btn2CbShort() { enqueue(&g_StEventFifo, EVT_BTN2_SHORT_PRESS); }
@@ -507,11 +499,10 @@ void btn3CbLong()  { enqueue(&g_StEventFifo, EVT_BTN3_LONG_PRESS); }
 void btn4CbShort() { enqueue(&g_StEventFifo, EVT_BTN4_SHORT_PRESS); }
 void btn4CbLong()  { enqueue(&g_StEventFifo, EVT_BTN4_LONG_PRESS); }
 
-// utility
+// utility functions
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
 	char msgBuf[64];
-	sprintf(msgBuf, "btn%d %s pressed!!", btnNumber,
-			bIsShortPress ? "short" : "long");
+	sprintf(msgBuf, "btn%d %s pressed!!", btnNumber, bIsShortPress ? "short" : "long");
 	OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
 	OLED_Display();
 }
@@ -622,12 +613,12 @@ void initDateTime(StDateTime_t *pStDateTime) {
 void incAlarmTime(StAlarmTime_t *pStAlarmTime) {
 	switch (pStAlarmTime->curPos) {
 	case 0:
-		if (++pStAlarmTime->cHour > 23)
-			pStAlarmTime->cHour = 0;
+		if (++pStAlarmTime->stTime.cHour > 23)
+			pStAlarmTime->stTime.cHour = 0;
 		break;
 	case 1:
-		if (++pStAlarmTime->cMinute > 59)
-			pStAlarmTime->cHour = 0;
+		if (++pStAlarmTime->stTime.cMinute > 59)
+			pStAlarmTime->stTime.cHour = 0;
 		break;
 	case 2:
 		pStAlarmTime->bEnable ^= 1;
@@ -639,12 +630,12 @@ void incAlarmTime(StAlarmTime_t *pStAlarmTime) {
 void decAlarmTime(StAlarmTime_t *pStAlarmTime) {
 	switch (pStAlarmTime->curPos) {
 	case 0:
-		if (--pStAlarmTime->cHour < 0)
-			pStAlarmTime->cHour = 23;
+		if (--pStAlarmTime->stTime.cHour < 0)
+			pStAlarmTime->stTime.cHour = 23;
 		break;
 	case 1:
-		if (--pStAlarmTime->cMinute < 0)
-			pStAlarmTime->cHour = 59;
+		if (--pStAlarmTime->stTime.cMinute < 0)
+			pStAlarmTime->stTime.cHour = 59;
 		break;
 	case 2:
 		pStAlarmTime->bEnable ^= 1;
@@ -714,4 +705,19 @@ void setSleepMode(){
 	g_bSleepMode = g_StSleepMode.bSleepMode;
 	g_ui32SleepModeCounter = g_StSleepMode.stTime.cMinute * 60
 					  + g_StSleepMode.stTime.cSecond;
+}
+void checkForPowerSave(){
+	static	uint32_t last;
+		uint32_t now = HAL_GetTick();
+		if(now - last > 1000){
+			last = now;
+			if(g_bSleepMode){
+				if (--g_ui32SleepModeCounter > 0) {
+					//g_ui32SleepModeCounter;
+				}else{
+					g_bSleepMode = false;
+					enqueue(&g_StEventFifo, EVT_ON_POW_SAVE);
+				}
+			}
+		}
 }
