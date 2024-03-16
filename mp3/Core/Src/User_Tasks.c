@@ -51,6 +51,9 @@ void initApp() {
 	// EepromLoad();
 	g_SystemState = ST_SYS_MAIN;
 	enqueue(&g_StEventFifo, EVT_IS_ENTRY);
+
+	enEepomBase_t base = DATE_TIME_OFFSET;
+	loadFromEeprom(&g_StDateTime, sizeof(StDateTime_t), base);
 }
 void loop(void) {
 	initApp();
@@ -168,6 +171,8 @@ void updateDateTime(){
 			showDateTimeEntryScreen(&g_StDateTime); break;
 			break;
 		case EVT_BTN4_SHORT_PRESS:
+			enEepomBase_t offset = DATE_TIME_OFFSET;
+			saveToEeprom((uint8_t*)&g_StDateTime, sizeof(StDateTime_t), offset);
 			enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 			g_SystemState = ST_SYS_MANAGEMENT; break;
 		default: break;
@@ -513,18 +518,16 @@ void decAlarmTime(StAlarmTime_t *pStAlarmTime){
 			break;
 	}
 }
-void saveDateTimeToEeprom(StDateTime_t *pStDateTime){
-	uint16_t size = sizeof(StDateTime_t);
-	uint8_t *pChar = (uint8_t*)pStDateTime;
-
-	//uint8_t *pEepromBase = (uint8_t*)0x08007f00;
-
+void saveToEeprom(uint8_t *pData, size_t size, enEepomBase_t base){
 	for (uint16_t i = 0; i < size; ++i) {
-		//eeprom_8bit_write(pEepromBase++ , *(pChar++));
-		eeprom_8bit_write(i , *pChar++);
+		eeprom_8bit_write(base+i , *pData++);
 	}
 }
-
+void loadFromEeprom(uint8_t *pData, size_t size, enEepomBase_t base){
+	for (int i = 0; i < size; ++i) {
+		*pData++ = eeprom_8bit_read(base+i);
+	}
+}
 
 
 

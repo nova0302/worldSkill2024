@@ -8,6 +8,12 @@
 
 #define numBtn (4)
 
+typedef enum EepromBase{
+	 DATE_TIME_OFFSET = 0
+	,ALARM_SET_OFFSET = 32
+	,SLEEP_MODE_OFFSET = 64
+}enEepomBase_t;
+
 typedef enum SystemState { ST_SYS_INIT
 	,ST_SYS_MAIN
 	,ST_SYS_MANAGEMENT
@@ -116,6 +122,7 @@ void btn3CbLong();
 void btn4CbShort();
 void btn4CbLong();
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress);
-
+void saveToEeprom(uint8_t *pData, size_t size, enEepomBase_t base);
+void loadFromEeprom(uint8_t *pData, size_t size, enEepomBase_t base);
 
 #endif
