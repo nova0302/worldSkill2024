@@ -91,16 +91,16 @@ void loop(void) {
 void handleEvtMainMenu() {
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-  updateSleepModeCounter(BtnEvent);
+  refreshSleepModeCounter(BtnEvent);
 
   switch (BtnEvent) {
   case EVT_IS_ENTRY: OLED_Buffer_Clear(); showMainMenuEntryScreen(); break;
-  case EVT_BTN1_SHORT_PRESS: DFPlayNextTrack(); break;
+  case EVT_BTN1_SHORT_PRESS: DFPlayNextTrack();          break;
   case EVT_BTN1_LONG_PRESS:  DFPlayThisTrack(g_trackNo); break;
-  case EVT_BTN2_SHORT_PRESS: DFPlayPreviousTrack(); break;
-  case EVT_BTN2_LONG_PRESS:  DFPause(); break;
-  case EVT_BTN3_SHORT_PRESS: Volume_Up(); break;
-  case EVT_BTN3_LONG_PRESS:  g_SystemState = ST_SYS_SETTING_SLEEP; break;
+  case EVT_BTN2_SHORT_PRESS: DFPlayPreviousTrack();      break;
+  case EVT_BTN2_LONG_PRESS:  DFPause();                  break;
+  case EVT_BTN3_SHORT_PRESS: Volume_Up();                break;
+  case EVT_BTN3_LONG_PRESS:  enqueue(&g_StEventFifo, EVT_ON_POW_SAVE); break;
   case EVT_BTN4_SHORT_PRESS: Volume_Down(); break;
   case EVT_BTN4_LONG_PRESS:
     enqueue(&g_StEventFifo, EVT_IS_ENTRY);
@@ -118,7 +118,7 @@ void handleEvtMenuSel() {
   static int8_t curPos = 0;
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-  updateSleepModeCounter(BtnEvent);
+  refreshSleepModeCounter(BtnEvent);
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
     curPos = 0;
@@ -157,7 +157,7 @@ void handleEvtMenuSel() {
 void handleEvtSettingAlarmSet() {
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-  updateSleepModeCounter(BtnEvent);
+  refreshSleepModeCounter(BtnEvent);
 
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
@@ -191,7 +191,7 @@ void handleEvtSettingAlarmSet() {
 void handleEvtSettingDateTime() {
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-  updateSleepModeCounter(BtnEvent);
+  refreshSleepModeCounter(BtnEvent);
 
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
@@ -228,7 +228,7 @@ void handleEvtSettingDateTime() {
 void handleEvtSettingSleepMode() {
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-  updateSleepModeCounter(BtnEvent);
+  refreshSleepModeCounter(BtnEvent);
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
     OLED_Buffer_Clear();
@@ -259,7 +259,7 @@ void handleEvtSettingSleepMode() {
 void handleEvtPowSaveMode(){
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
-  updateSleepModeCounter(BtnEvent);
+  refreshSleepModeCounter(BtnEvent);
 
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
@@ -714,7 +714,7 @@ void setSleepMode(){
   g_ui32SleepModeCounter = g_StSleepMode.stTime.cMinute * 60
     + g_StSleepMode.stTime.cSecond;
 }
-void updateSleepModeCounter(EnBtnEvent_t event){
+void refreshSleepModeCounter(EnBtnEvent_t event){
   switch (event) {
   case EVT_BTN1_SHORT_PRESS: 
   case EVT_BTN2_SHORT_PRESS: 

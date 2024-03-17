@@ -134,6 +134,6 @@ void incSleepMode();
 void decSleepMode();
 void setSleepMode();
 void checkForPowerSave();
-void updateSleepModeCounter(EnBtnEvent_t event);
+void refreshSleepModeCounter(EnBtnEvent_t event);
 
 #endif
