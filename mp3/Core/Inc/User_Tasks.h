@@ -9,9 +9,9 @@
 #define NUM_BTN (4)
 
 typedef enum EepromBase{
-	 DATE_TIME_OFFSET = 0
-	,ALARM_SET_OFFSET = 32
-	,SLEEP_MODE_OFFSET = 64
+	 EEP_OFFSET_DATE_TIME = 0
+	,EEP_OFFSET_ALARM_SET = 32
+	,EEP_OFFSET_SLEEP_MODE = 64
 }EnEepomBase_t;
 typedef enum SystemState { ST_SYS_INIT
 	,ST_SYS_MAIN
@@ -68,13 +68,13 @@ typedef struct{
 typedef struct{
 	StDate_t stDate;
 	StTime_t stTime;
-	uint8_t  curPos;
+	uint8_t  cCurPos;
 }StDateTime_t;
 
 typedef struct{
 	StTime_t stTime;
 	bool     bSleepMode;
-	int8_t   curPos;
+	int8_t   cCurPos;
 }StSleepMode_t;
 
 typedef void (*callBack)();

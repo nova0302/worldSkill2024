@@ -60,10 +60,10 @@ void initApp() {
   g_SystemState = ST_SYS_MAIN;
   enqueue(&g_StEventFifo, EVT_IS_ENTRY);
 
-  EnEepomBase_t base = DATE_TIME_OFFSET;
+  EnEepomBase_t base = EEP_OFFSET_DATE_TIME;
   loadFromEeprom((uint8_t*) &g_StDateTime, sizeof(StDateTime_t), base);
 
-  base = SLEEP_MODE_OFFSET;
+  base = EEP_OFFSET_SLEEP_MODE;
   loadFromEeprom((uint8_t*) &g_StSleepMode, sizeof(StSleepMode_t), base);
   g_bSleepMode = false;
 
@@ -115,27 +115,27 @@ void handleEvtMainMenu() {
   }
 }
 void handleEvtMenuSel() {
-  static int8_t curPos = 0;
+  static int8_t cCurPos = 0;
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
   refreshSleepModeCounter(BtnEvent);
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
-    curPos = 0;
+    cCurPos = 0;
     OLED_Buffer_Clear();
-    showManagementEntryScreen(curPos);
+    showManagementEntryScreen(cCurPos);
     break;
   case EVT_BTN1_SHORT_PRESS:
-    if (--curPos < 0) curPos = 2;
-    showManagementEntryScreen(curPos);
+    if (--cCurPos < 0) cCurPos = 2;
+    showManagementEntryScreen(cCurPos);
     break;
   case EVT_BTN2_SHORT_PRESS:
-    if (++curPos > 2) curPos = 0;
-    showManagementEntryScreen(curPos);
+    if (++cCurPos > 2) cCurPos = 0;
+    showManagementEntryScreen(cCurPos);
     break;
   case EVT_BTN3_SHORT_PRESS:
     enqueue(&g_StEventFifo, EVT_IS_ENTRY);
-    switch (curPos) {
+    switch (cCurPos) {
     case 0: g_SystemState = ST_SYS_SETTING_DATE_TIME; break;
     case 1: g_SystemState = ST_SYS_SETTING_ALARM; break;
     case 2: g_SystemState = ST_SYS_SETTING_SLEEP; break;
@@ -177,6 +177,8 @@ void handleEvtSettingAlarmSet() {
     showAlarmSetEntryScreen(&g_stAlarmTime);
     break;
   case EVT_BTN4_SHORT_PRESS:
+    EnEepomBase_t offset = EEP_OFFSET_ALARM_SET;
+    saveToEeprom((uint8_t*) &g_stAlarmTime, sizeof(StAlarmTime_t), offset);
     enqueue(&g_StEventFifo, EVT_IS_ENTRY);
     g_SystemState = ST_SYS_MENU_SEL;
     break;
@@ -207,12 +209,12 @@ void handleEvtSettingDateTime() {
     showDateTimeEntryScreen(&g_StDateTime);
     break;
   case EVT_BTN3_SHORT_PRESS:
-    if (++g_StDateTime.curPos > 5) g_StDateTime.curPos = 0;
+    if (++g_StDateTime.cCurPos > 5) g_StDateTime.cCurPos = 0;
     showDateTimeEntryScreen(&g_StDateTime);
     break;
     break;
   case EVT_BTN4_SHORT_PRESS:
-    EnEepomBase_t offset = DATE_TIME_OFFSET;
+    EnEepomBase_t offset = EEP_OFFSET_DATE_TIME;
     saveToEeprom((uint8_t*) &g_StDateTime, sizeof(StDateTime_t), offset);
     enqueue(&g_StEventFifo, EVT_IS_ENTRY);
     g_SystemState = ST_SYS_MENU_SEL;
@@ -236,13 +238,13 @@ void handleEvtSettingSleepMode() {
   case EVT_BTN1_SHORT_PRESS: incSleepMode(); showSleepModeEntryScreen(); break;
   case EVT_BTN2_SHORT_PRESS: decSleepMode(); showSleepModeEntryScreen(); break;
   case EVT_BTN3_SHORT_PRESS:
-    if (++g_StSleepMode.curPos > 2) {
-      g_StSleepMode.curPos = 0;
+    if (++g_StSleepMode.cCurPos > 2) {
+      g_StSleepMode.cCurPos = 0;
     }
     showSleepModeEntryScreen(); break;
   case EVT_BTN4_SHORT_PRESS: {
     setSleepMode();
-    EnEepomBase_t offset = SLEEP_MODE_OFFSET;
+    EnEepomBase_t offset = EEP_OFFSET_SLEEP_MODE;
     saveToEeprom((uint8_t*) &g_StSleepMode, sizeof(StSleepMode_t), offset);
     enqueue(&g_StEventFifo, EVT_IS_ENTRY);
     g_SystemState = ST_SYS_MENU_SEL;
@@ -264,7 +266,8 @@ void handleEvtPowSaveMode(){
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
     OLED_Buffer_Clear();
-    showSleepModeEntryScreen(); break;
+    showPowSaveEntryScreen(); break;
+    //showSleepModeEntryScreen(); break;
   case EVT_BTN1_SHORT_PRESS:
   case EVT_BTN2_SHORT_PRESS:
   case EVT_BTN3_SHORT_PRESS:
@@ -306,8 +309,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
   /////////////////////////////////  date
   uint8_t xPos = 0;
   sprintf(msgBuf, "%4d", pStDateTime->stDate.usYear);
-  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13,
-		pStDateTime->curPos == 0);
+  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13, pStDateTime->cCurPos == 0);
   OLED_Display();
 
   xPos += strlen(msgBuf) * 8;
@@ -316,8 +318,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
 
   xPos += 8;
   sprintf(msgBuf, " %02d", pStDateTime->stDate.ucMonth);
-  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13,
-		pStDateTime->curPos == 1);
+  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13, pStDateTime->cCurPos == 1);
   OLED_Display();
 
   xPos += strlen(msgBuf) * 8;
@@ -326,14 +327,12 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
 
   xPos += 8;
   sprintf(msgBuf, "%02d", pStDateTime->stDate.ucDay);
-  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13,
-		pStDateTime->curPos == 2);
+  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13, pStDateTime->cCurPos == 2);
   OLED_Display();
   /////////////////////////////////  time
   xPos = 0;
   sprintf(msgBuf, "%02d", pStDateTime->stTime.cHour);
-  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13,
-		pStDateTime->curPos == 3);
+  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, pStDateTime->cCurPos == 3);
   OLED_Display();
 
   xPos += strlen(msgBuf) * 8;
@@ -342,8 +341,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
 
   xPos += 8;
   sprintf(msgBuf, "%02d", pStDateTime->stTime.cMinute);
-  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13,
-		pStDateTime->curPos == 4);
+  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, pStDateTime->cCurPos == 4);
   OLED_Display();
 
   xPos += strlen(msgBuf) * 8;
@@ -352,8 +350,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
 
   xPos += 8;
   sprintf(msgBuf, "%02d", pStDateTime->stTime.cSecond);
-  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13,
-		pStDateTime->curPos == 5);
+  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, pStDateTime->cCurPos == 5);
   OLED_Display();
 }
 void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime) {
@@ -383,12 +380,12 @@ void showSleepModeEntryScreen() {
   xPos += strlen(msgBuf) * 8;
   sprintf(msgBuf, "%s", "   ");
   sprintf(msgBuf, "%s", (g_StSleepMode.bSleepMode) ? "ON" : "OFF");
-  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13, g_StSleepMode.curPos == 0);
+  OLED_Show_Str(xPos, 64 - 13 * 3, msgBuf, Font8x13, g_StSleepMode.cCurPos == 0);
   OLED_Display();
 
   xPos = 0;
   sprintf(msgBuf, "%02u", g_StSleepMode.stTime.cMinute);
-  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, g_StSleepMode.curPos == 1);
+  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, g_StSleepMode.cCurPos == 1);
   OLED_Display();
 
   xPos += strlen(msgBuf) * 8;
@@ -397,15 +394,16 @@ void showSleepModeEntryScreen() {
 
   xPos += 8;
   sprintf(msgBuf, "%02u", g_StSleepMode.stTime.cSecond);
-  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, g_StSleepMode.curPos == 2);
+  OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, g_StSleepMode.cCurPos == 2);
 
   OLED_Display();
 }
 void showPowSaveEntryScreen(){
   char msgBuf[32];
   sprintf(msgBuf, "%s", "SLEEP MODE");
-  uint8_t xPos = 128/2 - strlen(msgBuf) * 8;
-  OLED_Show_Str(xPos, 64/2-11, "00%", Font12x22, 0);
+  //uint8_t xPos = 128/2 - strlen(msgBuf) * 12 / 2;
+  //OLED_Show_Str(xPos, 64/2-11, msgBuf, Font12x22, 0);
+  OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
   OLED_Display();
 }
 
@@ -549,7 +547,7 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime) {
 }
 void incDateTime(StDateTime_t *pStDateTime) {
   //if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
-  switch (pStDateTime->curPos) {
+  switch (pStDateTime->cCurPos) {
   case 0:
     if (++pStDateTime->stDate.usYear > 2099)
       pStDateTime->stDate.usYear = 2000;
@@ -580,7 +578,7 @@ void incDateTime(StDateTime_t *pStDateTime) {
 }
 void decDateTime(StDateTime_t *pStDateTime) {
   //if (++pStDateTime->curPos > 5) pStDateTime->curPos = 0;
-  switch (pStDateTime->curPos) {
+  switch (pStDateTime->cCurPos) {
   case 0:
     if (--pStDateTime->stDate.usYear < 2000)
       pStDateTime->stDate.usYear = 2099;
@@ -610,7 +608,7 @@ void decDateTime(StDateTime_t *pStDateTime) {
   }
 }
 void initDateTime(StDateTime_t *pStDateTime) {
-  pStDateTime->curPos = 0;
+  pStDateTime->cCurPos = 0;
   pStDateTime->stDate.usYear = 2000;
   pStDateTime->stDate.ucMonth = 1;
   pStDateTime->stDate.ucDay = 1;
@@ -663,7 +661,7 @@ void loadFromEeprom(uint8_t *pData, size_t size, EnEepomBase_t base) {
   }
 }
 void incSleepMode() {
-  switch (g_StSleepMode.curPos) {
+  switch (g_StSleepMode.cCurPos) {
   case 0:
     g_StSleepMode.bSleepMode ^= 1;
     break;
@@ -688,7 +686,7 @@ void incSleepMode() {
   }
 }
 void decSleepMode() {
-  switch (g_StSleepMode.curPos) {
+  switch (g_StSleepMode.cCurPos) {
   case 0:
     g_StSleepMode.bSleepMode ^= 1;
     break;
@@ -734,10 +732,15 @@ void checkForPowerSave(){
     if(g_bSleepMode){
       if (--g_ui32SleepModeCounter > 0) {
       }else{
-	g_bSleepMode = false;
+	//g_bSleepMode = false;
 	enqueue(&g_StEventFifo, EVT_ON_POW_SAVE);
       }
     }
   }
 }
 //https://meet.google.com/dif-ovou-atk
+
+
+
+
+
