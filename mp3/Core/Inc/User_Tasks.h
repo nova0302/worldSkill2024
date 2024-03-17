@@ -6,7 +6,8 @@
 #include "stdbool.h"
 #include "Control_Hardware.h"
 
-#define numBtn (4)
+#define NUM_BTN (4)
+
 typedef enum EepromBase{
 	 DATE_TIME_OFFSET = 0
 	,ALARM_SET_OFFSET = 32
@@ -92,8 +93,9 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime);
 
 void loop(void);
 void start_P() ;
-void updateBtn(btnProcess_t *pBtn);
 void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbShort, callBack cbLong);
+void initBtns(btnProcess_t *pBtn, uint8_t numBtn);
+void updateBtns(btnProcess_t *pBtn, uint8_t numBtn );
 
 void handleEvtMainMenu();
 void handleEvtMenuSel();
@@ -132,6 +134,6 @@ void incSleepMode();
 void decSleepMode();
 void setSleepMode();
 void checkForPowerSave();
-void initBtns(btnProcess_t *pBtn );
+void updateSleepModeCounter(EnBtnEvent_t event);
 
 #endif
