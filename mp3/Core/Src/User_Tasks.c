@@ -280,13 +280,6 @@ void handleEvtPowSaveMode(){
 }
 
 // screen process
-void showManagementEntryScreen(uint8_t curPos) {
-  OLED_Show_Str(0, 0, "Options", Font8x13, 0);
-  OLED_Show_Str(0, 64 - 13 * 3, "Date/Time Set", Font8x13, curPos == 0);
-  OLED_Show_Str(0, 64 - 13 * 2, "Alarm Set", Font8x13, curPos == 1);
-  OLED_Show_Str(0, 64 - 13 * 1, "Sleep Mode Set", Font8x13, curPos == 2);
-  OLED_Display();
-}
 void showMainMenuEntryScreen() {
   OLED_Clear();
   OLED_Show_Picture(0, 0, 16, 16, Dir_Icon);
@@ -299,6 +292,13 @@ void showMainMenuEntryScreen() {
   //sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, Tr_all);
   sprintf(str_buf, "Track:%02d/%02d", (int)Tr_now, (int)g_numTotalTrack);
   OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
+  OLED_Display();
+}
+void showManagementEntryScreen(uint8_t curPos) {
+  OLED_Show_Str(0, 0, "Options", Font8x13, 0);
+  OLED_Show_Str(0, 64 - 13 * 3, "Date/Time Set", Font8x13, curPos == 0);
+  OLED_Show_Str(0, 64 - 13 * 2, "Alarm Set", Font8x13, curPos == 1);
+  OLED_Show_Str(0, 64 - 13 * 1, "Sleep Mode Set", Font8x13, curPos == 2);
   OLED_Display();
 }
 void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
@@ -531,7 +531,7 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime) {
     ret = 30;
     break;
   case 2:
-    //계산해서 리턴
+    //怨꾩궛�빐�꽌 由ы꽩
     uint16_t usYear = pStDateTime->stDate.usYear;
     if ((((usYear % 4) == 0) && ((usYear % 100) != 0))
 	|| ((usYear % 400) == 0)) {

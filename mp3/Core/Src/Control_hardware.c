@@ -10,10 +10,10 @@ uint16_t adc_buf[ADC_SAMPLE];
 
 void Battery_ADC_Init(void)
 {
-  HAL_ADC_Start(&hadc);
   for(uint8_t i=0; i<ADC_SAMPLE; i++)
   {
-    HAL_ADC_PollForConversion(&hadc, 0xFFFF);
+	  HAL_ADC_Start(&hadc);
+	  HAL_ADC_PollForConversion(&hadc, 0xFFFF);
     adc_buf[i] = HAL_ADC_GetValue(&hadc);
   }
   HAL_ADC_Stop(&hadc);
