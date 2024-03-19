@@ -15,10 +15,10 @@ uint8_t sw_alarm_flag = 0;
 uint16_t g_trackNo;
 uint16_t g_numTotalTrack;
 
-StAlarmTime_t g_stAlarmTime;
+StAlarmTime_t   g_stAlarmTime;
 EnSystemState_t g_SystemState;
 EnSystemState_t g_SystemStateLast;
-StDateTime_t g_StDateTime;
+StDateTime_t    g_StDateTime;
 
 StSleepMode_t g_StSleepMode;
 uint32_t      g_ui32SleepModeCounter;
@@ -293,12 +293,35 @@ void showMainMenuEntryScreen() {
   sprintf(str_buf, "Track:%02d/%02d", (int)Tr_now, (int)g_numTotalTrack);
   OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
   OLED_Display();
+
+  uint16_t usAdcValue = Battery_ADC_Get();
+  double batteryLevel = usAdcValue * 3.3 / 4096;
+
+#define VOLTAGE_DIVIDER
+#ifdef VOLTAGE_DIVIDER
+  batteryLevel *= 2;
+#endif
+  char msgBuf[32];
+
+  uint8_t dec = (int)batteryLevel;
+  uint8_t fra = (int)(batteryLevel * 10) % 10;
+  sprintf(msgBuf, "Bat Level: %d.%d", dec, fra);
+
+  OLED_Buffer_Clear();
+  OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
+  OLED_Display();
 }
 void showManagementEntryScreen(uint8_t curPos) {
-  OLED_Show_Str(0, 0, "Options", Font8x13, 0);
-  OLED_Show_Str(0, 64 - 13 * 3, "Date/Time Set", Font8x13, curPos == 0);
-  OLED_Show_Str(0, 64 - 13 * 2, "Alarm Set", Font8x13, curPos == 1);
-  OLED_Show_Str(0, 64 - 13 * 1, "Sleep Mode Set", Font8x13, curPos == 2);
+  OLED_Show_Str(0,           0, "Options", Font8x13, 0);
+
+  //OLED_Show_Str(0, 64 - 13 * 3, "Date/Time Set",  Font8x13, curPos == 0);
+  //OLED_Show_Str(0, 64 - 13 * 2, "Alarm Set",      Font8x13, curPos == 1);
+  //OLED_Show_Str(0, 64 - 13 * 1, "Sleep Mode Set", Font8x13, curPos == 2);
+  OLED_Show_Str(0,           0, "Options", Font8x13, 0);
+  char *msgArray[] ={"Date/Taime", "Alarm Set", "Sleep Mode Set"};
+    for (int i=0; i<3; ++i) {
+      OLED_Show_Str(0, 13 * (i+1), msgArray[i], Font8x13, curPos == i);
+    }
   OLED_Display();
 }
 void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
@@ -491,8 +514,8 @@ void initBtns(btnProcess_t *pBtn, uint8_t numBtn ){
   initBtn(&pBtn[3], SW4_GPIO_Port, SW4_Pin, btn4CbShort, btn4CbLong);
 }
 void updateBtns(btnProcess_t *pBtns, uint8_t numBtn ){
-    for (int i = 0; i < numBtn; ++i)
-      updateBtn(&pBtns[i]);
+  for (int i = 0; i < numBtn; ++i)
+    updateBtn(&pBtns[i]);
 }
 
 // publish btn events
@@ -531,7 +554,7 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime) {
     ret = 30;
     break;
   case 2:
-    //怨꾩궛�빐�꽌 由ы꽩
+    //占썩몿�뫒亦낆룈�뜮癒��땻占� 占쎈뎨占쎈뿪�돇
     uint16_t usYear = pStDateTime->stDate.usYear;
     if ((((usYear % 4) == 0) && ((usYear % 100) != 0))
 	|| ((usYear % 400) == 0)) {
@@ -718,10 +741,10 @@ void refreshSleepModeCounter(EnBtnEvent_t event){
   case EVT_BTN2_SHORT_PRESS: 
   case EVT_BTN3_SHORT_PRESS: 
   case EVT_BTN4_SHORT_PRESS: 
-  g_ui32SleepModeCounter = g_StSleepMode.stTime.cMinute * 60
-    + g_StSleepMode.stTime.cSecond;
+    g_ui32SleepModeCounter = g_StSleepMode.stTime.cMinute * 60
+      + g_StSleepMode.stTime.cSecond;
     break;
-default: break;
+  default: break;
   }
 }
 void checkForPowerSave(){

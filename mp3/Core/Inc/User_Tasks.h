@@ -83,8 +83,8 @@ typedef struct btnProcess {
 	GPIO_TypeDef *port;
 	uint16_t      pin;
 	EnBtnState_t  btnState;
-	uint32_t      last;    // time이전값
-	bool          btnLast; // btn이전값
+	uint32_t      last;    // time�씠�쟾媛�
+	bool          btnLast; // btn�씠�쟾媛�
 	callBack      cbShort;
 	callBack      cbLong;
 } btnProcess_t;
@@ -109,6 +109,7 @@ void showManagementEntryScreen(uint8_t curPos);
 void showDateTimeEntryScreen(StDateTime_t *pStDateTime);
 void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime);
 void showSleepModeEntryScreen();
+void showPowSaveEntryScreen();
 
 void initDateTime(StDateTime_t *pStDateTime);
 void incDateTime(StDateTime_t *pStDateTime);
