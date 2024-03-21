@@ -4,6 +4,7 @@
 #include <string.h>
 #include "main.h"
 #include "Delay.h"
+#include "stdbool.h"
 
 typedef struct
 {
@@ -14,6 +15,6 @@ typedef struct
   uint8_t Check_Byte;
 }DHT11_Type;
 
-void DHT11_Read_Data(DHT11_Type *User_Data);
+bool DHT11_Read_Data(DHT11_Type *User_Data);
 
 #endif

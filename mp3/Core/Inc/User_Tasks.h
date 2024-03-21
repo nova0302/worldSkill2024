@@ -5,6 +5,7 @@
 #include "main.h"
 #include "stdbool.h"
 #include "Control_Hardware.h"
+#include "DHT11.h"
 
 #define NUM_BTN (4)
 
@@ -37,6 +38,7 @@ typedef enum eBtnEvent {
 
 	,EVT_IS_ENTRY
 	,EVT_ON_POW_SAVE
+	,EVT_ON_UPDATE_MAIN
 } EnBtnEvent_t;
 
 typedef enum eTimeAction{ E_INCREASE, E_DECREASE }ETimeAction_t;
@@ -83,8 +85,8 @@ typedef struct btnProcess {
 	GPIO_TypeDef *port;
 	uint16_t      pin;
 	EnBtnState_t  btnState;
-	uint32_t      last;    // time�씠�쟾媛�
-	bool          btnLast; // btn�씠�쟾媛�
+	uint32_t      last;    // time�씠�쟾媛�
+	bool          btnLast; // btn�씠�쟾媛�
 	callBack      cbShort;
 	callBack      cbLong;
 } btnProcess_t;
@@ -136,5 +138,7 @@ void decSleepMode();
 void setSleepMode();
 void checkForPowerSave();
 void refreshSleepModeCounter(EnBtnEvent_t event);
+void updateMainPeriodFunc();
+void getTempHumi(DHT11_Type *pDht11);
 
 #endif

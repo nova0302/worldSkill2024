@@ -35,9 +35,10 @@ uint8_t DHT11_Read_Byte(void)
   return Data;
 }
 
-void DHT11_Read_Data(DHT11_Type *User_Data)
+bool DHT11_Read_Data(DHT11_Type *User_Data)
 {
   DHT11_Type Data = {0};
+  bool ret = false;
 
   DHT11_DATA_GPIO_Port->BSRR = (uint32_t)DHT11_DATA_Pin << 16;
   HAL_Delay(18);
@@ -53,13 +54,17 @@ void DHT11_Read_Data(DHT11_Type *User_Data)
     while(!(DHT11_DATA_GPIO_Port->IDR & DHT11_DATA_Pin));
     while(DHT11_DATA_GPIO_Port->IDR & DHT11_DATA_Pin);
 
-    Data.Humi_Int = DHT11_Read_Byte();
+    Data.Humi_Int   = DHT11_Read_Byte();
     Data.Humi_Float = DHT11_Read_Byte();
-    Data.Temp_Int = DHT11_Read_Byte();
+    Data.Temp_Int   = DHT11_Read_Byte();
     Data.Temp_Float = DHT11_Read_Byte();
     Data.Check_Byte = DHT11_Read_Byte();
-    if(Data.Humi_Int + Data.Humi_Float + Data.Temp_Int + Data.Temp_Float == Data.Check_Byte) memcpy(User_Data,&Data,sizeof(DHT11_Type));
+    if(Data.Humi_Int + Data.Humi_Float + Data.Temp_Int + Data.Temp_Float == Data.Check_Byte){
+    	memcpy(User_Data,&Data,sizeof(DHT11_Type));
+    	ret = true;
+    }
   }
   DHT11_Set_IO(1);
+  return ret;
 }
 

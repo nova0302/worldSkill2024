@@ -6,7 +6,7 @@
 uint32_t Tr_all = 0;
 uint32_t Tr_now = 0;
 
-char str_buf[20];
+//char str_buf[20];
 uint32_t sw_tick = 0, idle_tick = 0;
 uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0, Sleep_Sec = 0;
 uint8_t sw_flag = 0, sw_buf = 0, sw_it = 0;
@@ -75,6 +75,8 @@ void loop(void) {
   while (1) {
     updateBtns(&btns[0], NUM_BTN);
     checkForPowerSave();
+    updateMainPeriodFunc();
+
     switch (g_SystemState) {
     case ST_SYS_MAIN:              handleEvtMainMenu();         break;
     case ST_SYS_MENU_SEL:          handleEvtMenuSel();          break;
@@ -86,6 +88,14 @@ void loop(void) {
     }
   }
 }
+void updateMainPeriodFunc(){
+	static uint32_t last;
+	uint32_t now = HAL_GetTick();
+	if (now - last > 1000) {
+		last = now;
+		enqueue(&g_StEventFifo, EVT_ON_UPDATE_MAIN);
+	}
+}
 
 // each event process
 void handleEvtMainMenu() {
@@ -94,7 +104,8 @@ void handleEvtMainMenu() {
   refreshSleepModeCounter(BtnEvent);
 
   switch (BtnEvent) {
-  case EVT_IS_ENTRY: OLED_Buffer_Clear(); showMainMenuEntryScreen(); break;
+  case EVT_IS_ENTRY:
+  case EVT_ON_UPDATE_MAIN: OLED_Buffer_Clear(); showMainMenuEntryScreen(); break;
   case EVT_BTN1_SHORT_PRESS: DFPlayNextTrack();          break;
   case EVT_BTN1_LONG_PRESS:  DFPlayThisTrack(g_trackNo); break;
   case EVT_BTN2_SHORT_PRESS: DFPlayPreviousTrack();      break;
@@ -281,18 +292,18 @@ void handleEvtPowSaveMode(){
 
 // screen process
 void showMainMenuEntryScreen() {
-  OLED_Clear();
-  OLED_Show_Picture(0, 0, 16, 16, Dir_Icon);
+  //OLED_Clear();
+  char msgBuf[32];
+  OLED_Show_Picture(  0, 0, 16, 16, Dir_Icon);
   OLED_Show_Picture(100, 0, 16, 16, Alarm_Icon);
-  OLED_Show_Picture(120, 0, 8, 16, Battry_Icon);
+  OLED_Show_Picture(120, 0,  8, 16, Battry_Icon);
 
-  sprintf(str_buf, "VOL:%02d", Volume);
-  OLED_Show_Str(40, 3, str_buf, Font8x13, 0);
+  sprintf(msgBuf, "VOL:%02d", Volume);
+  OLED_Show_Str(40, 3, msgBuf, Font8x13, 0);
 
   //sprintf(str_buf, "Track:%02ld/%02ld", Tr_now, Tr_all);
-  sprintf(str_buf, "Track:%02d/%02d", (int)Tr_now, (int)g_numTotalTrack);
-  OLED_Show_Str(20, 19, str_buf, Font8x13, 0);
-  OLED_Display();
+  //sprintf(msgBuf, "Track:%02d/%02d", (int)Tr_now, (int)g_numTotalTrack);
+  //OLED_Show_Str(20, 19, msgBuf, Font8x13, 0);
 
   uint16_t usAdcValue = Battery_ADC_Get();
   double batteryLevel = usAdcValue * 3.3 / 4096;
@@ -301,15 +312,31 @@ void showMainMenuEntryScreen() {
 #ifdef VOLTAGE_DIVIDER
   batteryLevel *= 2;
 #endif
-  char msgBuf[32];
 
   uint8_t dec = (int)batteryLevel;
   uint8_t fra = (int)(batteryLevel * 10) % 10;
-  sprintf(msgBuf, "Bat Level: %d.%d", dec, fra);
 
-  OLED_Buffer_Clear();
-  OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
+  sprintf(msgBuf, "Bat Level: %d.%d", dec, fra);
+  OLED_Show_Str(0, 13*2, msgBuf, Font8x13, 0);
+
+  DHT11_Type dht11={0};
+  getTempHumi(&dht11);
+	  sprintf(msgBuf, "T:%d.%d H:%d.%d",
+		   dht11.Temp_Int ,dht11.Temp_Float
+		  ,dht11.Humi_Int ,dht11.Humi_Float );
+  	  OLED_Show_Str(0, 13*3, msgBuf, Font8x13, 0);
+
   OLED_Display();
+}
+void getTempHumi(DHT11_Type *pDht11){
+	static DHT11_Type dht11_last;
+	DHT11_Type dht11;
+
+	bool bIsValid = DHT11_Read_Data(&dht11);
+	if (bIsValid) {
+		dht11_last = dht11;
+	}
+	memcpy(pDht11, &dht11_last, sizeof(DHT11_Type));
 }
 void showManagementEntryScreen(uint8_t curPos) {
   OLED_Show_Str(0,           0, "Options", Font8x13, 0);
@@ -529,12 +556,14 @@ void btn4CbShort() { enqueue(&g_StEventFifo, EVT_BTN4_SHORT_PRESS); }
 void btn4CbLong()  { enqueue(&g_StEventFifo, EVT_BTN4_LONG_PRESS); }
 
 // utility functions
+/*
 void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
   char msgBuf[64];
   sprintf(msgBuf, "btn%d %s pressed!!", btnNumber, bIsShortPress ? "short" : "long");
   OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
   OLED_Display();
 }
+*/
 uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime) {
 
   uint8_t ret = 0xff;
@@ -554,7 +583,7 @@ uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime) {
     ret = 30;
     break;
   case 2:
-    //占썩몿�뫒亦낆룈�뜮癒��땻占� 占쎈뎨占쎈뿪�돇
+    //占썩몿�뫒亦낆룈�뜮癒��땻占� 占쎈뎨占쎈뿪�돇
     uint16_t usYear = pStDateTime->stDate.usYear;
     if ((((usYear % 4) == 0) && ((usYear % 100) != 0))
 	|| ((usYear % 400) == 0)) {
