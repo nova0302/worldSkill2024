@@ -3,14 +3,12 @@
 #include <stdio.h>
 #include "User_Tasks.h"
 
+extern TIM_HandleTypeDef htim6;
+
 uint32_t Tr_all = 0;
 uint32_t Tr_now = 0;
 
-//char str_buf[20];
-uint32_t sw_tick = 0, idle_tick = 0;
 uint8_t Volume = 0, Alarm_Flag = 0, Sleep_Flag = 0, Sleep_Min = 0, Sleep_Sec = 0;
-uint8_t sw_flag = 0, sw_buf = 0, sw_it = 0;
-uint8_t sw_alarm_flag = 0;
 
 uint16_t g_trackNo;
 uint16_t g_numTotalTrack;
@@ -78,8 +76,8 @@ void loop(void) {
     updateMainPeriodFunc();
 
     switch (g_SystemState) {
-    case ST_SYS_MAIN:              handleEvtMainMenu();         break;
-    case ST_SYS_MENU_SEL:          handleEvtMenuSel();          break;
+    case ST_SYS_MAIN:              handleEvtMain();         break;
+    case ST_SYS_MENU_SEL:          handleEvtSetting();          break;
     case ST_SYS_SETTING_SLEEP:     handleEvtSettingSleepMode(); break;
     case ST_SYS_SETTING_DATE_TIME: handleEvtSettingDateTime();  break;
     case ST_SYS_SETTING_ALARM:     handleEvtSettingAlarmSet();  break;
@@ -98,14 +96,14 @@ void updateMainPeriodFunc(){
 }
 
 // each event process
-void handleEvtMainMenu() {
+void handleEvtMain() {
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
   refreshSleepModeCounter(BtnEvent);
 
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
-  case EVT_ON_UPDATE_MAIN: OLED_Buffer_Clear(); showMainMenuEntryScreen(); break;
+  case EVT_ON_UPDATE_MAIN:   updateMain(); break;
   case EVT_BTN1_SHORT_PRESS: DFPlayNextTrack();          break;
   case EVT_BTN1_LONG_PRESS:  DFPlayThisTrack(g_trackNo); break;
   case EVT_BTN2_SHORT_PRESS: DFPlayPreviousTrack();      break;
@@ -125,7 +123,7 @@ void handleEvtMainMenu() {
   default: break;
   }
 }
-void handleEvtMenuSel() {
+void handleEvtSetting() {
   static int8_t cCurPos = 0;
   EnBtnEvent_t BtnEvent;
   if (!dequeue(&g_StEventFifo, &BtnEvent)) return;
@@ -134,15 +132,15 @@ void handleEvtMenuSel() {
   case EVT_IS_ENTRY:
     cCurPos = 0;
     OLED_Buffer_Clear();
-    showManagementEntryScreen(cCurPos);
+    updateSettingMenu(cCurPos);
     break;
   case EVT_BTN1_SHORT_PRESS:
     if (--cCurPos < 0) cCurPos = 2;
-    showManagementEntryScreen(cCurPos);
+    updateSettingMenu(cCurPos);
     break;
   case EVT_BTN2_SHORT_PRESS:
     if (++cCurPos > 2) cCurPos = 0;
-    showManagementEntryScreen(cCurPos);
+    updateSettingMenu(cCurPos);
     break;
   case EVT_BTN3_SHORT_PRESS:
     enqueue(&g_StEventFifo, EVT_IS_ENTRY);
@@ -173,19 +171,19 @@ void handleEvtSettingAlarmSet() {
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
     OLED_Buffer_Clear();
-    showAlarmSetEntryScreen(&g_stAlarmTime);
+    updateSettingAlarmSet(&g_stAlarmTime);
     break;
   case EVT_BTN1_SHORT_PRESS:
     incAlarmTime(&g_stAlarmTime);
-    showAlarmSetEntryScreen(&g_stAlarmTime);
+    updateSettingAlarmSet(&g_stAlarmTime);
     break;
   case EVT_BTN2_SHORT_PRESS:
     decAlarmTime(&g_stAlarmTime);
-    showAlarmSetEntryScreen(&g_stAlarmTime);
+    updateSettingAlarmSet(&g_stAlarmTime);
     break;
   case EVT_BTN3_SHORT_PRESS:
     if (++g_stAlarmTime.curPos > 2) g_stAlarmTime.curPos = 0;
-    showAlarmSetEntryScreen(&g_stAlarmTime);
+    updateSettingAlarmSet(&g_stAlarmTime);
     break;
   case EVT_BTN4_SHORT_PRESS:
     EnEepomBase_t offset = EEP_OFFSET_ALARM_SET;
@@ -209,19 +207,19 @@ void handleEvtSettingDateTime() {
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
     OLED_Buffer_Clear();
-    showDateTimeEntryScreen(&g_StDateTime);
+    updateSettingDateTime(&g_StDateTime);
     break;
   case EVT_BTN1_SHORT_PRESS:
     incDateTime(&g_StDateTime);
-    showDateTimeEntryScreen(&g_StDateTime);
+    updateSettingDateTime(&g_StDateTime);
     break;
   case EVT_BTN2_SHORT_PRESS:
     decDateTime(&g_StDateTime);
-    showDateTimeEntryScreen(&g_StDateTime);
+    updateSettingDateTime(&g_StDateTime);
     break;
   case EVT_BTN3_SHORT_PRESS:
     if (++g_StDateTime.cCurPos > 5) g_StDateTime.cCurPos = 0;
-    showDateTimeEntryScreen(&g_StDateTime);
+    updateSettingDateTime(&g_StDateTime);
     break;
     break;
   case EVT_BTN4_SHORT_PRESS:
@@ -245,14 +243,14 @@ void handleEvtSettingSleepMode() {
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
     OLED_Buffer_Clear();
-    showSleepModeEntryScreen(); break;
-  case EVT_BTN1_SHORT_PRESS: incSleepMode(); showSleepModeEntryScreen(); break;
-  case EVT_BTN2_SHORT_PRESS: decSleepMode(); showSleepModeEntryScreen(); break;
+    updateSettingSleepMode(); break;
+  case EVT_BTN1_SHORT_PRESS: incSleepMode(); updateSettingSleepMode(); break;
+  case EVT_BTN2_SHORT_PRESS: decSleepMode(); updateSettingSleepMode(); break;
   case EVT_BTN3_SHORT_PRESS:
     if (++g_StSleepMode.cCurPos > 2) {
       g_StSleepMode.cCurPos = 0;
     }
-    showSleepModeEntryScreen(); break;
+    updateSettingSleepMode(); break;
   case EVT_BTN4_SHORT_PRESS: {
     setSleepMode();
     EnEepomBase_t offset = EEP_OFFSET_SLEEP_MODE;
@@ -277,13 +275,13 @@ void handleEvtPowSaveMode(){
   switch (BtnEvent) {
   case EVT_IS_ENTRY:
     OLED_Buffer_Clear();
-    showPowSaveEntryScreen(); break;
-    //showSleepModeEntryScreen(); break;
+    updatePowSaveMode(); break;
   case EVT_BTN1_SHORT_PRESS:
   case EVT_BTN2_SHORT_PRESS:
   case EVT_BTN3_SHORT_PRESS:
   case EVT_BTN4_SHORT_PRESS:
-    enqueue(&g_StEventFifo, EVT_IS_ENTRY);
+	  //https://meet.google.com/dif-ovou-atk
+   enqueue(&g_StEventFifo, EVT_IS_ENTRY);
     g_SystemState = g_SystemStateLast;
     break;
   default: break;
@@ -291,8 +289,9 @@ void handleEvtPowSaveMode(){
 }
 
 // screen process
-void showMainMenuEntryScreen() {
+void updateMain() {
   //OLED_Clear();
+  OLED_Buffer_Clear();
   char msgBuf[32];
   OLED_Show_Picture(  0, 0, 16, 16, Dir_Icon);
   OLED_Show_Picture(100, 0, 16, 16, Alarm_Icon);
@@ -321,24 +320,24 @@ void showMainMenuEntryScreen() {
 
   DHT11_Type dht11={0};
   getTempHumi(&dht11);
-	  sprintf(msgBuf, "T:%d.%d H:%d.%d",
-		   dht11.Temp_Int ,dht11.Temp_Float
-		  ,dht11.Humi_Int ,dht11.Humi_Float );
-  	  OLED_Show_Str(0, 13*3, msgBuf, Font8x13, 0);
+  sprintf(msgBuf, "T:%d.%d H:%d.%d"
+	  ,dht11.Temp_Int ,dht11.Temp_Float
+	  ,dht11.Humi_Int ,dht11.Humi_Float );
+  OLED_Show_Str(0, 13*3, msgBuf, Font8x13, 0);
 
   OLED_Display();
 }
 void getTempHumi(DHT11_Type *pDht11){
-	static DHT11_Type dht11_last;
-	DHT11_Type dht11;
+  static DHT11_Type dht11_last;
+  DHT11_Type dht11;
 
-	bool bIsValid = DHT11_Read_Data(&dht11);
-	if (bIsValid) {
-		dht11_last = dht11;
-	}
-	memcpy(pDht11, &dht11_last, sizeof(DHT11_Type));
+  bool bIsValid = DHT11_Read_Data(&dht11);
+  if (bIsValid) {
+    dht11_last = dht11;
+  }
+  memcpy(pDht11, &dht11_last, sizeof(DHT11_Type));
 }
-void showManagementEntryScreen(uint8_t curPos) {
+void updateSettingMenu(uint8_t curPos) {
   OLED_Show_Str(0,           0, "Options", Font8x13, 0);
 
   //OLED_Show_Str(0, 64 - 13 * 3, "Date/Time Set",  Font8x13, curPos == 0);
@@ -346,12 +345,12 @@ void showManagementEntryScreen(uint8_t curPos) {
   //OLED_Show_Str(0, 64 - 13 * 1, "Sleep Mode Set", Font8x13, curPos == 2);
   OLED_Show_Str(0,           0, "Options", Font8x13, 0);
   char *msgArray[] ={"Date/Taime", "Alarm Set", "Sleep Mode Set"};
-    for (int i=0; i<3; ++i) {
-      OLED_Show_Str(0, 13 * (i+1), msgArray[i], Font8x13, curPos == i);
-    }
+  for (int i=0; i<3; ++i) {
+    OLED_Show_Str(0, 13 * (i+1), msgArray[i], Font8x13, curPos == i);
+  }
   OLED_Display();
 }
-void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
+void updateSettingDateTime(StDateTime_t *pStDateTime) {
 
   char msgBuf[32];
   OLED_Show_Str(0, 0, "DATE/TIME SET", Font8x13, 0);
@@ -403,7 +402,7 @@ void showDateTimeEntryScreen(StDateTime_t *pStDateTime) {
   OLED_Show_Str(xPos, 64 - 13 * 2, msgBuf, Font8x13, pStDateTime->cCurPos == 5);
   OLED_Display();
 }
-void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime) {
+void updateSettingAlarmSet(StAlarmTime_t *pStAlarmTime) {
   char msgBuf[32];
   OLED_Show_Str(0, 0, "ALARM SET", Font8x13, 0);
   OLED_Show_Str(0, 64 - 13 * 3, "Enable: ", Font8x13, 0);
@@ -417,7 +416,7 @@ void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime) {
 
   OLED_Display();
 }
-void showSleepModeEntryScreen() {
+void updateSettingSleepMode() {
   char msgBuf[32];
   OLED_Show_Str(0, 0, "SLEEP MODE SET", Font8x13, 0);
   OLED_Display();
@@ -448,7 +447,7 @@ void showSleepModeEntryScreen() {
 
   OLED_Display();
 }
-void showPowSaveEntryScreen(){
+void updatePowSaveMode(){
   char msgBuf[32];
   sprintf(msgBuf, "%s", "SLEEP MODE");
   //uint8_t xPos = 128/2 - strlen(msgBuf) * 12 / 2;
@@ -557,12 +556,12 @@ void btn4CbLong()  { enqueue(&g_StEventFifo, EVT_BTN4_LONG_PRESS); }
 
 // utility functions
 /*
-void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
+  void printDbgMessage(uint8_t btnNumber, bool bIsShortPress) {
   char msgBuf[64];
   sprintf(msgBuf, "btn%d %s pressed!!", btnNumber, bIsShortPress ? "short" : "long");
   OLED_Show_Str(0, 0, msgBuf, Font8x13, 0);
   OLED_Display();
-}
+  }
 */
 uint8_t getLastDayOfMonth(StDateTime_t *pStDateTime) {
 
@@ -790,8 +789,13 @@ void checkForPowerSave(){
     }
   }
 }
-//https://meet.google.com/dif-ovou-atk
 
+/*
+void delayUs(uint16_t us){
+	__HAL_TIM_SET_COUNTER(&htim6, 0);
+	while (__HAL_TIM_GET_COUNTER(&htim6) < us) ;
+}
+*/
 
 
 

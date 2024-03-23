@@ -99,19 +99,19 @@ void initBtn(btnProcess_t *pBtn, GPIO_TypeDef *port, uint16_t pin, callBack cbSh
 void initBtns(btnProcess_t *pBtn, uint8_t numBtn);
 void updateBtns(btnProcess_t *pBtn, uint8_t numBtn );
 
-void handleEvtMainMenu();
-void handleEvtMenuSel();
+void handleEvtMain();
+void handleEvtSetting();
 void handleEvtSettingSleepMode();
 void handleEvtSettingDateTime();
 void handleEvtSettingAlarmSet();
 void handleEvtPowSaveMode();
 
-void showMainMenuEntryScreen();
-void showManagementEntryScreen(uint8_t curPos);
-void showDateTimeEntryScreen(StDateTime_t *pStDateTime);
-void showAlarmSetEntryScreen(StAlarmTime_t *pStAlarmTime);
-void showSleepModeEntryScreen();
-void showPowSaveEntryScreen();
+void updateMain();
+void updateSettingMenu(uint8_t curPos);
+void updateSettingDateTime(StDateTime_t *pStDateTime);
+void updateSettingAlarmSet(StAlarmTime_t *pStAlarmTime);
+void updateSettingSleepMode();
+void updatePowSaveMode();
 
 void initDateTime(StDateTime_t *pStDateTime);
 void incDateTime(StDateTime_t *pStDateTime);
